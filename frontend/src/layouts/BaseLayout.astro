@@ -15,11 +15,11 @@ const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8080';
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content={description} />
   <meta name="theme-color" content="#faf0e6" />
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="icon" type="image/png" href="/logo.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Epilogue:ital,wght@0,400..800;1,400..800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <title>{title} — Lexaa Store</title>
+  <title>{title && title !== 'Beranda' && title !== 'Lexaa Store' ? `${title} — Lexaa Store` : 'Lexaa Store'}</title>
 
   <style is:global>
     /* Custom scrollbar */
@@ -97,11 +97,10 @@ const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8080';
       color: #f5eae1;
     }
 
-    /* SPECIFIC UTILITIES (No global collision) */
-    html.light .logo-store { color: #87533d; }
-    html.dark .logo-store { color: #b8856c; }
-    
-    .btn-solid { color: #faf0e6 !important; }
+    /* Instant zero-delay smooth theme transition */
+    *, *::before, *::after {
+      transition: background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.25s cubic-bezier(0.4, 0, 0.2, 1), fill 0.25s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
   </style>
 
   <script is:inline>
@@ -114,6 +113,20 @@ const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8080';
       document.documentElement.classList.add('light');
       document.documentElement.classList.remove('dark');
     }
+
+    // Instant zero-delay theme toggle function
+    window.toggleTheme = function() {
+      const isDark = document.documentElement.classList.contains('dark');
+      if (isDark) {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
+        localStorage.setItem('theme', 'light');
+      } else {
+        document.documentElement.classList.remove('light');
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+      }
+    };
   </script>
 </head>
 <body class="min-h-screen bg-[#faf0e6] dark:bg-[#120e0b] text-[#1c1510] dark:text-[#f5eae1] antialiased transition-colors duration-300">
@@ -135,21 +148,6 @@ const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8080';
   <script define:vars={{ API_URL }}>
     // Make API URL globally available
     window.__API_URL__ = API_URL;
-
-    // Handle Theme Toggle Switch
-    const themeBtn = document.getElementById('theme-toggle-btn');
-    themeBtn?.addEventListener('click', () => {
-      const isDark = document.documentElement.classList.contains('dark');
-      if (isDark) {
-        document.documentElement.classList.remove('dark');
-        document.documentElement.classList.add('light');
-        localStorage.setItem('theme', 'light');
-      } else {
-        document.documentElement.classList.remove('light');
-        document.documentElement.classList.add('dark');
-        localStorage.setItem('theme', 'dark');
-      }
-    });
   </script>
 </body>
 </html>
