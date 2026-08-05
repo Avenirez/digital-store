@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build & Dist outputs
+dist/
+.astro/
+bin/
+
+# Environment files
+.env
+.env.local
+backend/.env
+
+# IDE & OS files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

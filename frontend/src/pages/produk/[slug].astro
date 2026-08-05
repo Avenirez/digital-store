@@ -1,0 +1,238 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import RestockForm from '../../components/RestockForm.astro';
+
+const { slug } = Astro.params;
+const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8080';
+
+let product: any = null;
+let notFound = false;
+
+try {
+  const res = await fetch(`${API_URL}/api/v1/products/${slug}`);
+  if (res.ok) {
+    product = await res.json();
+  } else {
+    notFound = true;
+  }
+} catch {
+  notFound = true;
+}
+
+const priceFormatted = product ? new Intl.NumberFormat('id-ID', {
+  style: 'currency',
+  currency: 'IDR',
+  minimumFractionDigits: 0,
+}).format(product.price_idr) : '';
+
+const isInStock = product?.stock_count > 0;
+
+// For SSG, we need to define all possible slugs
+export async function getStaticPaths() {
+  const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8080';
+  try {
+    const res = await fetch(`${API_URL}/api/v1/products`);
+    if (res.ok) {
+      const data = await res.json();
+      return (data.products || []).map((p: any) => ({
+        params: { slug: p.slug },
+      }));
+    }
+  } catch {}
+  return [];
+}
+---
+
+<BaseLayout title={product?.title || 'Produk'} description={product?.description || ''}>
+  <Header slot="header" />
+
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 py-12">
+    {notFound ? (
+      <div class="text-center py-20">
+        <h1 class="text-2xl font-bold text-white mb-4">Produk tidak ditemukan</h1>
+        <p class="text-surface-400 mb-6">Produk yang kamu cari tidak tersedia atau sudah dihapus.</p>
+        <a href="/" class="px-6 py-2.5 rounded-lg bg-brand-600 text-white text-sm font-medium hover:bg-brand-500 transition-colors">
+          Kembali ke Beranda
+        </a>
+      </div>
+    ) : (
+      <div class="animate-fade-in">
+        <!-- Breadcrumb -->
+        <nav class="flex items-center gap-2 text-sm text-[#5c4a3b] mb-8 font-medium">
+          <a href="/" class="hover:text-[#1c1510] transition-colors">Beranda</a>
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+          </svg>
+          <span class="text-[#1c1510] font-bold">{product.title}</span>
+        </nav>
+
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+          <!-- Product Info (3 cols) -->
+          <div class="lg:col-span-3">
+            <!-- Image -->
+            <div class="relative h-64 sm:h-80 rounded-xl bg-gradient-to-br from-[#f5e8dd] to-[#ebd8c8] border border-[#e5d4c5] overflow-hidden mb-6">
+              {product.image_url ? (
+                <img src={product.image_url} alt={product.title} class="w-full h-full object-cover" />
+              ) : (
+                <div class="w-full h-full flex items-center justify-center">
+                  <div class="w-64 h-24 rounded-2xl bg-[#e5cbba]/50 border border-[#b8856c]/20 flex items-center justify-center">
+                    <svg class="w-12 h-12 text-[#87533d]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                    </svg>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <!-- Description -->
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-[#87533d] dark:text-[#ffffff] mb-4">{product.title}</h1>
+            {product.description && (
+              <div class="prose prose-sm max-w-none">
+                <p class="text-[#4a3b30] dark:text-[#f5eae1] leading-relaxed whitespace-pre-line font-medium">{product.description}</p>
+              </div>
+            )}
+
+            <!-- Trust badges -->
+            <div class="flex flex-wrap gap-3 mt-6">
+              {[
+                { icon: '⚡', text: 'Pengiriman instan' },
+                { icon: '🔒', text: 'Pembayaran aman' },
+                { icon: '✅', text: 'Akun siap pakai' },
+              ].map((badge) => (
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#ffffff] dark:bg-[#2b1f17] border border-[#e5d4c5] dark:border-[#3d2d22] text-xs font-extrabold text-[#3d3025] dark:text-[#f5eae1] shadow-sm">
+                  <span>{badge.icon}</span>{badge.text}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <!-- Purchase Card (2 cols) -->
+          <div class="lg:col-span-2">
+            <div class="sticky top-24 p-6 rounded-xl bg-[#ffffff]/95 dark:bg-[#1c1510] border border-[#e5d4c5] dark:border-[#3d2d22] shadow-md shadow-[#3d3025]/5">
+              <!-- Price -->
+              <div class="mb-5">
+                <span class="text-xs text-[#6f5643] dark:text-[#b8856c] uppercase font-bold tracking-wider">Harga per akun</span>
+                <div class="text-3xl font-black text-[#1c1510] dark:text-[#faf0e6] mt-1">{priceFormatted}</div>
+              </div>
+
+              <!-- Stock -->
+              <div class="flex items-center gap-2 mb-6 p-3 rounded-lg bg-[#faf0e6] dark:bg-[#2b1f17] border border-[#e5d4c5] dark:border-[#3d2d22]">
+                <span class={`w-2.5 h-2.5 rounded-full ${isInStock ? 'bg-emerald-600 animate-pulse-soft' : 'bg-rose-600'}`}></span>
+                <span class={`text-sm font-bold ${isInStock ? 'text-emerald-800 dark:text-emerald-400' : 'text-rose-800 dark:text-rose-400'}`}>
+                  {isInStock ? `${product.stock_count} akun tersedia` : 'Stok habis'}
+                </span>
+              </div>
+
+              {isInStock ? (
+                <div>
+                  <!-- Checkout Form -->
+                  <form id="checkout-form" class="space-y-4">
+                    <input type="hidden" name="product_slug" value={product.slug} />
+                    
+                    <div>
+                      <label for="customer_email" class="block text-xs font-black text-[#2b1f17] dark:text-[#faf0e6] mb-1.5">Email</label>
+                      <input
+                        type="email"
+                        id="customer_email"
+                        name="customer_email"
+                        required
+                        placeholder="email@contoh.com"
+                        class="w-full px-3.5 py-2.5 rounded-lg bg-[#faf0e6] dark:bg-[#2b1f17] border border-[#e5d4c5] dark:border-[#3d2d22] text-sm text-[#4d3a2c] dark:text-[#faf0e6] placeholder:text-[#9e644c]/70 dark:placeholder:text-[#b8856c]/60 focus:outline-none focus:border-[#87533d] focus:ring-1 focus:ring-[#87533d]/30 transition-all font-bold"
+                      />
+                    </div>
+
+                    <div>
+                      <label for="customer_name" class="block text-xs font-black text-[#2b1f17] dark:text-[#faf0e6] mb-1.5">Nama (opsional)</label>
+                      <input
+                        type="text"
+                        id="customer_name"
+                        name="customer_name"
+                        placeholder="Nama kamu"
+                        class="w-full px-3.5 py-2.5 rounded-lg bg-[#faf0e6] dark:bg-[#2b1f17] border border-[#e5d4c5] dark:border-[#3d2d22] text-sm text-[#4d3a2c] dark:text-[#faf0e6] placeholder:text-[#9e644c]/70 dark:placeholder:text-[#b8856c]/60 focus:outline-none focus:border-[#87533d] focus:ring-1 focus:ring-[#87533d]/30 transition-all font-bold"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      id="checkout-btn"
+                      class="btn-solid w-full py-3 rounded-xl bg-gradient-to-r from-[#87533d] to-[#b8856c] !text-[#faf0e6] font-extrabold text-sm hover:from-[#6f4332] hover:to-[#a36d54] shadow-lg shadow-[#87533d]/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Beli Sekarang — {priceFormatted}
+                    </button>
+                  </form>
+
+                  <div id="checkout-error" class="hidden mt-4 p-3 rounded-lg bg-rose-50 border border-rose-200">
+                    <p class="text-xs text-rose-700 font-medium" id="checkout-error-text"></p>
+                  </div>
+                </div>
+              ) : (
+                <RestockForm productSlug={product.slug} />
+              )}
+
+              <!-- Payment info -->
+              <div class="mt-6 pt-5 border-t border-[#e5d4c5]">
+                <p class="text-xs text-[#6f5643] text-center font-medium">
+                  Pembayaran Otomatis & Instan via QRIS
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+
+  <Footer slot="footer" />
+</BaseLayout>
+
+<script>
+  const form = document.getElementById('checkout-form') as HTMLFormElement;
+  const btn = document.getElementById('checkout-btn') as HTMLButtonElement;
+  const errorEl = document.getElementById('checkout-error');
+  const errorText = document.getElementById('checkout-error-text');
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorEl?.classList.add('hidden');
+    btn.disabled = true;
+    btn.textContent = 'Memproses...';
+
+    const formData = new FormData(form);
+    const body = {
+      product_slug: formData.get('product_slug'),
+      customer_email: formData.get('customer_email'),
+      customer_name: formData.get('customer_name') || '',
+      quantity: 1,
+    };
+
+    try {
+      const res = await fetch(`${(window as any).__API_URL__}/api/v1/checkout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.payment_url) {
+        // Redirect to Duitku payment page
+        window.location.href = data.payment_url;
+      } else {
+        if (errorText) errorText.textContent = data.error || 'Checkout gagal. Silakan coba lagi.';
+        errorEl?.classList.remove('hidden');
+        btn.disabled = false;
+        btn.textContent = `Beli Sekarang`;
+      }
+    } catch {
+      if (errorText) errorText.textContent = 'Koneksi gagal. Periksa jaringan Anda.';
+      errorEl?.classList.remove('hidden');
+      btn.disabled = false;
+      btn.textContent = `Beli Sekarang`;
+    }
+  });
+</script>
+
+  <Footer slot="footer" />
+</BaseLayout>

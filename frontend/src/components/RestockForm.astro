@@ -1,0 +1,88 @@
+---
+interface Props {
+  productSlug: string;
+}
+
+const { productSlug } = Astro.props;
+---
+
+<div class="mt-6 p-5 rounded-xl bg-surface-900/60 border border-surface-800/60" id="restock-form-container">
+  <div class="flex items-center gap-2 mb-3">
+    <svg class="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+    </svg>
+    <h4 class="text-sm font-semibold text-white">Notifikasi Restock</h4>
+  </div>
+  <p class="text-xs text-surface-400 mb-4">Masukkan email untuk mendapat notifikasi saat produk ini tersedia kembali.</p>
+
+  <form id="restock-form" class="flex gap-2">
+    <input type="hidden" name="product_slug" value={productSlug} />
+    <input
+      type="email"
+      name="email"
+      required
+      placeholder="email@contoh.com"
+      class="flex-1 px-3.5 py-2.5 rounded-lg bg-surface-800 border border-surface-700 text-sm text-white placeholder:text-surface-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30 transition-all"
+      id="restock-email-input"
+    />
+    <button
+      type="submit"
+      class="px-4 py-2.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-sm font-medium text-white transition-colors shrink-0"
+      id="restock-submit-btn"
+    >
+      Ingatkan
+    </button>
+  </form>
+
+  <div id="restock-success" class="hidden mt-3 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+    <p class="text-xs text-emerald-400 flex items-center gap-1.5">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      Berhasil! Kami akan mengirim email saat produk tersedia.
+    </p>
+  </div>
+
+  <div id="restock-error" class="hidden mt-3 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+    <p class="text-xs text-red-400" id="restock-error-text">Gagal mendaftar. Silakan coba lagi.</p>
+  </div>
+</div>
+
+<script>
+  const form = document.getElementById('restock-form') as HTMLFormElement;
+  const successEl = document.getElementById('restock-success');
+  const errorEl = document.getElementById('restock-error');
+  const errorText = document.getElementById('restock-error-text');
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    successEl?.classList.add('hidden');
+    errorEl?.classList.add('hidden');
+
+    const formData = new FormData(form);
+    const body = {
+      product_slug: formData.get('product_slug'),
+      email: formData.get('email'),
+    };
+
+    try {
+      const res = await fetch(`${(window as any).__API_URL__}/api/v1/restock/subscribe`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      if (res.ok) {
+        successEl?.classList.remove('hidden');
+        form.reset();
+      } else {
+        const data = await res.json();
+        if (errorText) errorText.textContent = data.error || 'Gagal mendaftar.';
+        errorEl?.classList.remove('hidden');
+      }
+    } catch {
+      if (errorText) errorText.textContent = 'Koneksi gagal. Periksa jaringan Anda.';
+      errorEl?.classList.remove('hidden');
+    }
+  });
+</script>

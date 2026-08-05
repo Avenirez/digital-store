@@ -1,0 +1,89 @@
+---
+const navLinks = [
+  { href: '/', label: 'Beranda' },
+  { href: '/#produk', label: 'Produk' },
+  { href: '/lacak', label: 'Lacak Pesanan' },
+];
+---
+
+<header class="sticky top-0 z-50 glass border-b border-[#e5d4c5] dark:border-[#3d2d22]">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6">
+    <div class="flex items-center justify-between h-16">
+      <!-- Logo -->
+      <a href="/" class="flex items-center gap-2.5 group" id="header-logo">
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-[#87533d] to-[#6f4332] dark:from-[#b8856c] dark:to-[#87533d] flex items-center justify-center shadow-md shadow-[#87533d]/20 dark:shadow-[#b8856c]/30 group-hover:shadow-[#87533d]/40 transition-all">
+          <svg class="w-5 h-5 text-white dark:text-[#120e0b]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        </div>
+        <span class="text-lg font-extrabold text-[#1c1510] dark:text-[#f5eae1] tracking-tight">
+          Lexaa <span class="logo-store text-[#87533d] dark:text-[#b8856c]" style="color: var(--logo-store-color);">Store</span>
+        </span>
+      </a>
+
+      <!-- Desktop Nav -->
+      <nav class="hidden md:flex items-center gap-1" id="desktop-nav">
+        {navLinks.map((link) => (
+          <a
+            href={link.href}
+            class="px-4 py-2 rounded-lg text-sm font-extrabold text-[#4d3a2c] dark:text-[#d9c5b5] hover:text-[#2b1f17] dark:hover:text-white hover:bg-[#4d3a2c]/10 dark:hover:bg-[#2b1f17] transition-all duration-200"
+          >
+            {link.label}
+          </a>
+        ))}
+      </nav>
+
+      <!-- Actions (Theme Toggle & Mobile menu) -->
+      <div class="flex items-center gap-2">
+        <!-- Switch Toggle Button -->
+        <button
+          id="theme-toggle-btn"
+          class="relative inline-flex items-center h-7 w-12 rounded-full p-1 bg-[#e5d4c5] dark:bg-[#33251a] border border-[#d2bead] dark:border-[#4d3a2c] transition-colors focus:outline-none shadow-inner"
+          aria-label="Toggle Theme"
+        >
+          <!-- Switch Knob -->
+          <span
+            id="theme-toggle-knob"
+            class="inline-block w-5 h-5 rounded-full bg-[#87533d] dark:bg-[#e4cdb7] shadow-md transform translate-x-0 dark:translate-x-5 transition-transform duration-300 flex items-center justify-center text-[10px]"
+          >
+            <span id="theme-icon-sun" class="dark:hidden">☀️</span>
+            <span id="theme-icon-moon" class="hidden dark:inline">🌙</span>
+          </span>
+        </button>
+
+        <!-- Mobile menu button -->
+        <button
+          id="mobile-menu-btn"
+          class="md:hidden p-2 rounded-lg text-[#5c4a3b] dark:text-[#e4cdb7] hover:text-[#1c1510] dark:hover:text-white hover:bg-[#f3e3d3]/60 dark:hover:bg-[#33251a] transition-colors"
+          aria-label="Toggle menu"
+        >
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Nav -->
+    <nav id="mobile-menu" class="md:hidden hidden pb-4 border-t border-[#e5d4c5] mt-2 pt-4">
+      <div class="flex flex-col gap-1">
+        {navLinks.map((link) => (
+          <a
+            href={link.href}
+            class="px-4 py-2.5 rounded-lg text-sm font-semibold text-[#4a3b30] hover:text-[#1c1510] hover:bg-[#f3e3d3]/60 transition-all"
+          >
+            {link.label}
+          </a>
+        ))}
+      </div>
+    </nav>
+  </div>
+</header>
+
+<script>
+  const btn = document.getElementById('mobile-menu-btn');
+  const menu = document.getElementById('mobile-menu');
+  btn?.addEventListener('click', () => {
+    menu?.classList.toggle('hidden');
+  });
+</script>
