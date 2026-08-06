@@ -72,16 +72,24 @@ import CopyBox from '../components/CopyBox.astro';
         </div>
         <div class="space-y-3 text-sm">
           <div class="flex justify-between">
-            <span class="text-[#5c4a3b] font-medium">Nomor Pesanan</span>
-            <span class="text-[#1c1510] font-mono font-bold" id="result-order-number"></span>
+            <span class="text-[#5c4a3b] dark:text-[#b8856c] font-medium">Nomor Pesanan</span>
+            <span class="text-[#1c1510] dark:text-[#faf0e6] font-mono font-bold" id="result-order-number"></span>
           </div>
           <div class="flex justify-between">
-            <span class="text-[#5c4a3b] font-medium">Total</span>
-            <span class="text-[#1c1510] font-bold" id="result-total"></span>
+            <span class="text-[#5c4a3b] dark:text-[#b8856c] font-medium">Produk</span>
+            <span class="text-[#1c1510] dark:text-[#faf0e6] font-bold text-right" id="result-product-name">-</span>
           </div>
           <div class="flex justify-between">
-            <span class="text-[#5c4a3b] font-medium">Tanggal</span>
-            <span class="text-[#1c1510] font-medium" id="result-date"></span>
+            <span class="text-[#5c4a3b] dark:text-[#b8856c] font-medium">Jumlah / Qty</span>
+            <span class="text-[#1c1510] dark:text-[#faf0e6] font-bold" id="result-quantity">-</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-[#5c4a3b] dark:text-[#b8856c] font-medium">Total</span>
+            <span class="text-[#87533d] dark:text-[#e4cdb7] font-bold" id="result-total"></span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-[#5c4a3b] dark:text-[#b8856c] font-medium">Tanggal</span>
+            <span class="text-[#1c1510] dark:text-[#faf0e6] font-medium" id="result-date"></span>
           </div>
         </div>
       </div>
@@ -194,11 +202,15 @@ import CopyBox from '../components/CopyBox.astro';
 
     // Order info
     const orderNumEl = document.getElementById('result-order-number');
+    const productNameEl = document.getElementById('result-product-name');
+    const quantityEl = document.getElementById('result-quantity');
     const totalEl = document.getElementById('result-total');
     const dateEl = document.getElementById('result-date');
     const statusBadge = document.getElementById('status-badge');
 
     if (orderNumEl) orderNumEl.textContent = order.order_number;
+    if (productNameEl) productNameEl.textContent = order.product_title || order.product_name || order.product_slug || 'Akun Digital Premium';
+    if (quantityEl) quantityEl.textContent = `${order.quantity || 1} Akun`;
     if (totalEl) totalEl.textContent = `Rp ${parseInt(order.total_amount).toLocaleString('id-ID')}`;
     if (dateEl) dateEl.textContent = new Date(order.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 

@@ -43,6 +43,11 @@ func NewOrderRepo(db *pgxpool.Pool) *OrderRepo {
 	return &OrderRepo{db: db}
 }
 
+// GetDB returns the underlying pgxpool instance.
+func (r *OrderRepo) GetDB() *pgxpool.Pool {
+	return r.db
+}
+
 // Create inserts a new order and returns its generated UUID.
 func (r *OrderRepo) Create(ctx context.Context, order *Order) error {
 	query := `

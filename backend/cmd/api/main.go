@@ -115,8 +115,9 @@ func main() {
 		r.With(lookupRateLimiter.Middleware).Get("/orders/download", orderHandler.DownloadCredentials)
 		r.Post("/orders/simulate-pay", orderHandler.SimulatePay)
 
-		// Webhook endpoint (Duitku callback — no rate limit, no CORS)
+		// Webhook endpoints (Duitku callback & App Listener — no rate limit, no CORS)
 		r.Post("/webhooks/duitku", webhookHandler.DuitkuCallback)
+		r.Post("/webhooks/notification", webhookHandler.NotificationListener)
 
 		// Restock subscription
 		r.Post("/restock/subscribe", restockHandler.Subscribe)

@@ -9,7 +9,7 @@ const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8080';
 ---
 
 <!DOCTYPE html>
-<html lang="id" class="light">
+<html lang="id" class="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -134,7 +134,7 @@ const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8080';
     ::view-transition-new(root) {
       z-index: 2;
       clip-path: circle(0% at 50% 50%);
-      animation: theme-wave-reveal 2.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+      animation: theme-wave-reveal 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
     }
 
     @keyframes theme-wave-reveal {
@@ -153,8 +153,8 @@ const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8080';
   </style>
 
   <script is:inline>
-    // Init theme from localStorage or system preference
-    const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    // Init theme from localStorage or default to dark mode on first visit
+    const savedTheme = localStorage.getItem('theme') || 'dark';
     if (savedTheme === 'dark') {
       document.documentElement.classList.add('dark');
       document.documentElement.classList.remove('light');
@@ -217,7 +217,7 @@ const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8080';
 
   <!-- Floating Telegram Support Button (Nomor 3) -->
   <a
-    href="https://t.me/your_telegram_username"
+    href="https://t.me/phoeeeniiiiix"
     target="_blank"
     rel="noopener noreferrer"
     class="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-full bg-[#24A1DE] hover:bg-[#1d8dc4] text-white font-extrabold text-xs shadow-xl shadow-[#24A1DE]/30 cursor-pointer select-none"

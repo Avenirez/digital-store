@@ -1,8 +1,12 @@
 package handler
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
+	"regexp"
+	"strconv"
+	"strings"
 
 	"my-digital-store/backend/internal/repository"
 	"my-digital-store/backend/internal/service"
@@ -158,4 +162,112 @@ func (h *WebhookHandler) sendCredentialEmail(order *repository.Order) {
 	if err := h.resend.SendCredentials(order.CustomerEmail, order.OrderNumber, productTitle, credentials); err != nil {
 		log.Printf("[WEBHOOK] Failed to send credential email: %v", err)
 	}
+}
+
+// NotificationPayload struct for MacroDroid / App Listener HTTP POST
+type NotificationPayload struct {
+	Title string `json:"title"`
+	Text  string `json:"text"`
+	App   string `json:"app"`
+}
+
+// NotificationListener handles POST /api/v1/webhooks/notification
+// It receives push notifications from MacroDroid on Android and matches payment amounts.
+func (h *WebhookHandler) NotificationListener(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var payload NotificationPayload
+	// Support JSON decode
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		// Fallback parse form if sent as form-data
+		r.ParseForm()
+		payload.Title = r.FormValue("title")
+		payload.Text = r.FormValue("text")
+		payload.App = r.FormValue("app")
+	}
+
+	log.Printf("[NOTIFICATION-LISTENER] Received notification from %s | Title: %s | Text: %s", payload.App, payload.Title, payload.Text)
+
+	fullContent := payload.Title + " " + payload.Text
+	if fullContent == " " {
+		http.Error(w, "Empty payload", http.StatusBadRequest)
+		return
+	}
+
+	// Extract amount from text (e.g. "Berhasil menerima transfer Rp 15.347" or "Rp15.347")
+	re := regexp.MustCompile(`Rp\s?([0-9\.\,]+)`)
+	matches := re.FindStringSubmatch(fullContent)
+	if len(matches) < 2 {
+		log.Printf("[NOTIFICATION-LISTENER] No Rp amount pattern found in notification text")
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status":"ignored","reason":"No Rp amount found"}`))
+		return
+	}
+
+	rawAmountStr := matches[1]
+	// Clean formatting (dots and commas to pure number)
+	cleanedAmount := strings.ReplaceAll(strings.ReplaceAll(rawAmountStr, ".", ""), ",", ".")
+	paidAmount, err := strconv.ParseFloat(cleanedAmount, 64)
+	if err != nil {
+		log.Printf("[NOTIFICATION-LISTENER] Failed to parse float amount %s: %v", cleanedAmount, err)
+		http.Error(w, "Invalid amount format", http.StatusBadRequest)
+		return
+	}
+
+	log.Printf("[NOTIFICATION-LISTENER] Parsed incoming payment amount: Rp %.2f", paidAmount)
+
+	// Search for PENDING order matching this total_amount (within exact match or 0.01 tolerance)
+	var orderID, orderNumber, customerEmail, productID string
+	var totalAmount float64
+	query := `
+		SELECT id, order_number, COALESCE(customer_email, ''), product_id::text, total_amount
+		FROM orders
+		WHERE status = 'PENDING' AND ABS(total_amount - $1) < 0.01
+		ORDER BY created_at DESC
+		LIMIT 1
+	`
+	err = h.orderRepo.GetDB().QueryRow(ctx, query, paidAmount).Scan(&orderID, &orderNumber, &customerEmail, &productID, &totalAmount)
+	if err != nil {
+		log.Printf("[NOTIFICATION-LISTENER] No pending order found for amount Rp %.2f (or query err: %v)", paidAmount, err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status":"not_found","message":"No matching pending order for this amount"}`))
+		return
+	}
+
+	// Update order status to PAID
+	if err := h.orderRepo.UpdateStatus(ctx, orderID, repository.OrderStatusPaid); err != nil {
+		log.Printf("[NOTIFICATION-LISTENER] UpdateStatus error: %v", err)
+		http.Error(w, "Internal error", http.StatusInternalServerError)
+		return
+	}
+
+	// Mark reserved stocks as SOLD
+	soldCount, err := h.stockRepo.MarkSoldByOrderID(ctx, orderID)
+	if err != nil {
+		log.Printf("[NOTIFICATION-LISTENER] MarkSoldByOrderID error: %v", err)
+	}
+	log.Printf("[NOTIFICATION-LISTENER] Order %s (Rp %.2f) SUCCESS via Notification Listener! %d stocks marked SOLD", orderNumber, totalAmount, soldCount)
+
+	// Send notifications asynchronously
+	orderObj := &repository.Order{
+		ID:            orderID,
+		OrderNumber:   orderNumber,
+		CustomerEmail: customerEmail,
+		ProductID:     productID,
+		TotalAmount:   totalAmount,
+	}
+	go h.sendCredentialEmail(orderObj)
+
+	product, _ := h.productRepo.GetByID(ctx, productID)
+	productTitle := "Digital Account"
+	if product != nil {
+		productTitle = product.Title
+	}
+	h.telegram.AlertNewOrder(orderNumber, customerEmail, totalAmount, productTitle+" (Via App Listener)")
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"status":"success","order_number":"` + orderNumber + `"}`))
 }
