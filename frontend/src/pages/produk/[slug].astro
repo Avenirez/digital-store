@@ -128,30 +128,70 @@ export async function getStaticPaths() {
               {isInStock ? (
                 <div>
                   <!-- Checkout Form -->
-                  <form id="checkout-form" class="space-y-4">
+                  <form id="checkout-form" class="space-y-4" data-unit-price={product.price_idr} data-max-stock={Math.min(product.stock_count, 5)}>
                     <input type="hidden" name="product_slug" value={product.slug} />
                     
+                    <!-- Quantity Selector -->
                     <div>
-                      <label for="customer_email" class="block text-xs font-black text-[#2b1f17] dark:text-[#faf0e6] mb-1.5">Email</label>
+                      <label for="quantity" class="block text-xs font-black text-[#2b1f17] dark:text-[#faf0e6] mb-1.5">Jumlah Pembelian (Maks 5 Pcs)</label>
+                      <div class="flex items-center gap-2">
+                        <button
+                          type="button"
+                          id="qty-minus"
+                          class="w-10 h-10 rounded-lg bg-[#faf0e6] dark:bg-[#2b1f17] border border-[#e5d4c5] dark:border-[#3d2d22] text-[#4d3a2c] dark:text-[#faf0e6] font-bold text-lg hover:bg-[#e4cdb7] dark:hover:bg-[#38291f] transition-all flex items-center justify-center select-none"
+                        >
+                          -
+                        </button>
+                        <input
+                          type="number"
+                          id="quantity"
+                          name="quantity"
+                          value="1"
+                          min="1"
+                          max={Math.min(product.stock_count, 5)}
+                          readonly
+                          class="w-16 h-10 text-center rounded-lg bg-[#faf0e6] dark:bg-[#2b1f17] border border-[#e5d4c5] dark:border-[#3d2d22] text-sm text-[#4d3a2c] dark:text-[#faf0e6] font-extrabold focus:outline-none select-none"
+                        />
+                        <button
+                          type="button"
+                          id="qty-plus"
+                          class="w-10 h-10 rounded-lg bg-[#faf0e6] dark:bg-[#2b1f17] border border-[#e5d4c5] dark:border-[#3d2d22] text-[#4d3a2c] dark:text-[#faf0e6] font-bold text-lg hover:bg-[#e4cdb7] dark:hover:bg-[#38291f] transition-all flex items-center justify-center select-none"
+                        >
+                          +
+                        </button>
+                        <span class="text-xs text-[#87533d] dark:text-[#b8856c] font-bold ml-2">Pcs</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label for="pin" class="block text-xs font-black text-[#2b1f17] dark:text-[#faf0e6] mb-1.5">PIN Keamanan</label>
                       <input
-                        type="email"
-                        id="customer_email"
-                        name="customer_email"
+                        type="password"
+                        id="pin"
+                        name="pin"
                         required
-                        placeholder="email@contoh.com"
-                        class="w-full px-3.5 py-2.5 rounded-lg bg-[#faf0e6] dark:bg-[#2b1f17] border border-[#e5d4c5] dark:border-[#3d2d22] text-sm text-[#4d3a2c] dark:text-[#faf0e6] placeholder:text-[#9e644c]/70 dark:placeholder:text-[#b8856c]/60 focus:outline-none focus:border-[#87533d] focus:ring-1 focus:ring-[#87533d]/30 transition-all font-bold"
+                        maxlength="6"
+                        pattern="[0-9]{6}"
+                        inputmode="numeric"
+                        placeholder="Contoh: 123456"
+                        class="w-full px-3.5 py-2.5 rounded-lg bg-[#faf0e6] dark:bg-[#2b1f17] border border-[#e5d4c5] dark:border-[#3d2d22] text-sm text-[#4d3a2c] dark:text-[#faf0e6] placeholder:text-[#9e644c]/70 dark:placeholder:text-[#b8856c]/60 focus:outline-none focus:border-[#87533d] focus:ring-1 focus:ring-[#87533d]/30 transition-all font-bold tracking-widest"
                       />
                     </div>
 
                     <div>
-                      <label for="customer_name" class="block text-xs font-black text-[#2b1f17] dark:text-[#faf0e6] mb-1.5">Nama (opsional)</label>
+                      <label for="confirm_pin" class="block text-xs font-black text-[#2b1f17] dark:text-[#faf0e6] mb-1.5">Konfirmasi PIN Keamanan</label>
                       <input
-                        type="text"
-                        id="customer_name"
-                        name="customer_name"
-                        placeholder="Nama kamu"
-                        class="w-full px-3.5 py-2.5 rounded-lg bg-[#faf0e6] dark:bg-[#2b1f17] border border-[#e5d4c5] dark:border-[#3d2d22] text-sm text-[#4d3a2c] dark:text-[#faf0e6] placeholder:text-[#9e644c]/70 dark:placeholder:text-[#b8856c]/60 focus:outline-none focus:border-[#87533d] focus:ring-1 focus:ring-[#87533d]/30 transition-all font-bold"
+                        type="password"
+                        id="confirm_pin"
+                        name="confirm_pin"
+                        required
+                        maxlength="6"
+                        pattern="[0-9]{6}"
+                        inputmode="numeric"
+                        placeholder="Masukkan ulang PIN"
+                        class="w-full px-3.5 py-2.5 rounded-lg bg-[#faf0e6] dark:bg-[#2b1f17] border border-[#e5d4c5] dark:border-[#3d2d22] text-sm text-[#4d3a2c] dark:text-[#faf0e6] placeholder:text-[#9e644c]/70 dark:placeholder:text-[#b8856c]/60 focus:outline-none focus:border-[#87533d] focus:ring-1 focus:ring-[#87533d]/30 transition-all font-bold tracking-widest"
                       />
+                      <p class="text-[11px] text-[#87533d] dark:text-[#b8856c] font-semibold mt-1">*Buat PIN 6 angka untuk melacak & mengambil pesanan kamu.</p>
                     </div>
 
                     <button
@@ -159,12 +199,12 @@ export async function getStaticPaths() {
                       id="checkout-btn"
                       class="btn-solid w-full py-3 rounded-xl bg-gradient-to-r from-[#87533d] to-[#b8856c] !text-[#faf0e6] font-extrabold text-sm hover:from-[#6f4332] hover:to-[#a36d54] shadow-lg shadow-[#87533d]/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Beli Sekarang — {priceFormatted}
+                      Beli Sekarang — <span id="btn-price-display">{priceFormatted}</span>
                     </button>
                   </form>
 
-                  <div id="checkout-error" class="hidden mt-4 p-3 rounded-lg bg-rose-50 border border-rose-200">
-                    <p class="text-xs text-rose-700 font-medium" id="checkout-error-text"></p>
+                  <div id="checkout-error" class="hidden mt-4 p-3 rounded-lg bg-rose-50 dark:bg-rose-950/80 border border-rose-200 dark:border-rose-800">
+                    <p class="text-xs text-rose-700 dark:text-rose-300 font-bold" id="checkout-error-text"></p>
                   </div>
                 </div>
               ) : (
@@ -172,9 +212,9 @@ export async function getStaticPaths() {
               )}
 
               <!-- Payment info -->
-              <div class="mt-6 pt-5 border-t border-[#e5d4c5]">
-                <p class="text-xs text-[#6f5643] text-center font-medium">
-                  Pembayaran Otomatis & Instan via QRIS
+              <div class="mt-6 pt-5 border-t border-[#e5d4c5] dark:border-[#3d2d22]">
+                <p class="text-xs text-[#87533d] dark:text-[#b8856c] text-center font-bold">
+                  *Penting : simpan Nomor Pesanan & PIN agar pesanan bisa dilacak melalui website*
                 </p>
               </div>
             </div>
@@ -193,18 +233,128 @@ export async function getStaticPaths() {
   const errorEl = document.getElementById('checkout-error');
   const errorText = document.getElementById('checkout-error-text');
 
+  // Quantity controls
+  const qtyInput = document.getElementById('quantity') as HTMLInputElement;
+  const qtyMinus = document.getElementById('qty-minus');
+  const qtyPlus = document.getElementById('qty-plus');
+  const priceDisplay = document.getElementById('btn-price-display');
+
+  const unitPrice = parseFloat(form?.dataset.unitPrice || '0');
+  const maxStock = parseInt(form?.dataset.maxStock || '5', 10);
+
+  function updatePrice() {
+    if (!qtyInput) return;
+    const qty = parseInt(qtyInput.value, 10) || 1;
+    const totalPrice = unitPrice * qty;
+    const formatted = new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+    }).format(totalPrice);
+    if (priceDisplay) priceDisplay.textContent = formatted;
+  }
+
+  qtyMinus?.addEventListener('click', () => {
+    if (!qtyInput) return;
+    let current = parseInt(qtyInput.value, 10) || 1;
+    if (current > 1) {
+      qtyInput.value = (current - 1).toString();
+      updatePrice();
+    }
+  });
+
+  qtyPlus?.addEventListener('click', () => {
+    if (!qtyInput) return;
+    let current = parseInt(qtyInput.value, 10) || 1;
+    if (current < maxStock) {
+      qtyInput.value = (current + 1).toString();
+      updatePrice();
+    }
+  });
+
+  // Rate Limiting untuk Konfirmasi PIN Salah (10x per 30 menit)
+  const MAX_MISMATCH = 10;
+  const WINDOW_MS = 30 * 60 * 1000; // 30 menit
+
+  function getPinMismatchAttempts(): { count: number; firstAttemptTime: number } {
+    try {
+      const data = localStorage.getItem('pin_mismatch_attempts');
+      if (data) return JSON.parse(data);
+    } catch {}
+    return { count: 0, firstAttemptTime: 0 };
+  }
+
+  function recordPinMismatch(): { blocked: boolean; remainingMins: number } {
+    const now = Date.now();
+    let state = getPinMismatchAttempts();
+
+    // Reset jika window 30 menit sudah lewat
+    if (now - state.firstAttemptTime > WINDOW_MS) {
+      state = { count: 1, firstAttemptTime: now };
+    } else {
+      state.count += 1;
+    }
+
+    try {
+      localStorage.setItem('pin_mismatch_attempts', JSON.stringify(state));
+    } catch {}
+
+    if (state.count >= MAX_MISMATCH) {
+      const remainingMs = WINDOW_MS - (now - state.firstAttemptTime);
+      const remainingMins = Math.ceil(remainingMs / (60 * 1000));
+      return { blocked: true, remainingMins };
+    }
+
+    return { blocked: false, remainingMins: 0 };
+  }
+
+  function isPinMismatchBlocked(): { blocked: boolean; remainingMins: number } {
+    const now = Date.now();
+    const state = getPinMismatchAttempts();
+
+    if (state.count >= MAX_MISMATCH && (now - state.firstAttemptTime < WINDOW_MS)) {
+      const remainingMs = WINDOW_MS - (now - state.firstAttemptTime);
+      const remainingMins = Math.ceil(remainingMs / (60 * 1000));
+      return { blocked: true, remainingMins };
+    }
+    return { blocked: false, remainingMins: 0 };
+  }
+
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    errorEl?.classList.add('hidden');
+    if (errorEl) errorEl.classList.add('hidden');
+
+    // Cek apakah user sedang diblokir karena >10x PIN tidak cocok
+    const blockCheck = isPinMismatchBlocked();
+    if (blockCheck.blocked) {
+      if (errorText) errorText.textContent = `🚫 Terlalu banyak percobaan PIN salah (Maks 10x). Silakan coba lagi dalam ${blockCheck.remainingMins} menit.`;
+      if (errorEl) errorEl.classList.remove('hidden');
+      return;
+    }
+
+    const formData = new FormData(form);
+    const pin = (formData.get('pin') as string) || '';
+    const confirmPin = (formData.get('confirm_pin') as string) || '';
+    const qty = parseInt((formData.get('quantity') as string) || '1', 10);
+
+    if (pin !== confirmPin) {
+      const result = recordPinMismatch();
+      if (result.blocked) {
+        if (errorText) errorText.textContent = `🚫 Terlalu banyak percobaan PIN salah (Maks 10x). Silakan coba lagi dalam ${result.remainingMins} menit.`;
+      } else {
+        if (errorText) errorText.textContent = `❌ Konfirmasi PIN tidak cocok. Silakan periksa kembali. (Percobaan ke-${getPinMismatchAttempts().count} dari 10)`;
+      }
+      if (errorEl) errorEl.classList.remove('hidden');
+      return;
+    }
+
     btn.disabled = true;
     btn.textContent = 'Memproses...';
 
-    const formData = new FormData(form);
     const body = {
       product_slug: formData.get('product_slug'),
-      customer_email: formData.get('customer_email'),
-      customer_name: formData.get('customer_name') || '',
-      quantity: 1,
+      pin: pin,
+      quantity: qty,
     };
 
     try {
@@ -220,7 +370,13 @@ export async function getStaticPaths() {
         // Redirect to Duitku payment page
         window.location.href = data.payment_url;
       } else {
-        if (errorText) errorText.textContent = data.error || 'Checkout gagal. Silakan coba lagi.';
+        if (res.status === 429) {
+          const retrySec = data.retry_after_seconds || 1800;
+          const mins = Math.ceil(retrySec / 60);
+          if (errorText) errorText.textContent = `🚫 Terlalu banyak transaksi (Maks 10x). Silakan coba lagi dalam ${mins} menit.`;
+        } else {
+          if (errorText) errorText.textContent = data.error || 'Checkout gagal. Silakan coba lagi.';
+        }
         errorEl?.classList.remove('hidden');
         btn.disabled = false;
         btn.textContent = `Beli Sekarang`;

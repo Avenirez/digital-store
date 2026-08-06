@@ -4,7 +4,7 @@ interface Props {
   description?: string;
 }
 
-const { title, description = 'Toko akun digital premium — Instan, aman, terpercaya.' } = Astro.props;
+const { title, description = 'Lexaa Store adalah platform yang menyediakan layanan pembelian akun digital premium secara instan, aman, dan terpercaya dengan sistem pengiriman otomatis.' } = Astro.props;
 const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8080';
 ---
 
@@ -97,9 +97,58 @@ const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8080';
       color: #f5eae1;
     }
 
-    /* Instant zero-delay smooth theme transition */
-    *, *::before, *::after {
-      transition: background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.25s cubic-bezier(0.4, 0, 0.2, 1), fill 0.25s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Instant smooth theme transition for container elements */
+    body, header, footer, card {
+      transition: background-color 0.4s ease, border-color 0.4s ease, color 0.4s ease;
+    }
+
+    /* ========================================================
+       DARK / LIGHT MODE — CENTER-OUT "WAVE" TRANSITION
+       Powered by the View Transitions API. The whole page is
+       screenshotted before and after the class swap; the "new"
+       snapshot is revealed through an expanding circle centered
+       on the viewport, like a ripple spreading outward.
+       ======================================================== */
+
+    /* While a wave transition is in flight, kill the ambient per-element
+       color transition above — otherwise the "new" snapshot the browser
+       captures would freeze mid-crossfade instead of showing final colors. */
+    html.theme-wave-active *,
+    html.theme-wave-active *::before,
+    html.theme-wave-active *::after {
+      transition: none !important;
+    }
+
+    ::view-transition-group(root),
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+      animation: none;
+      mix-blend-mode: normal;
+      pointer-events: none;
+    }
+
+    ::view-transition-old(root) {
+      z-index: 1;
+    }
+
+    ::view-transition-new(root) {
+      z-index: 2;
+      clip-path: circle(0% at 50% 50%);
+      animation: theme-wave-reveal 2.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    }
+
+    @keyframes theme-wave-reveal {
+      to {
+        clip-path: circle(100% at 50% 50%);
+      }
+    }
+
+    /* Users who've asked for less motion still get the instant swap above,
+       but guard here too in case a transition is already mid-flight. */
+    @media (prefers-reduced-motion: reduce) {
+      ::view-transition-new(root) {
+        animation-duration: 0.001s;
+      }
     }
   </style>
 
@@ -114,8 +163,9 @@ const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8080';
       document.documentElement.classList.remove('dark');
     }
 
-    // Instant zero-delay theme toggle function
-    window.toggleTheme = function() {
+    // Flips the theme class + persists it. This is the actual state change;
+    // everything in toggleTheme() below is just *how* it's revealed on screen.
+    function applyTheme() {
       const isDark = document.documentElement.classList.contains('dark');
       if (isDark) {
         document.documentElement.classList.remove('dark');
@@ -126,6 +176,26 @@ const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8080';
         document.documentElement.classList.add('dark');
         localStorage.setItem('theme', 'dark');
       }
+    }
+
+    // Theme toggle with a center-out "wave" reveal (see the
+    // ::view-transition-old/new(root) rules above). Falls back to the
+    // instant swap on browsers without View Transitions support, or when
+    // the user prefers reduced motion.
+    window.toggleTheme = function() {
+      const supportsViewTransitions = typeof document.startViewTransition === 'function';
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      if (!supportsViewTransitions || prefersReducedMotion) {
+        applyTheme();
+        return;
+      }
+
+      document.documentElement.classList.add('theme-wave-active');
+      const transition = document.startViewTransition(() => applyTheme());
+      transition.finished.finally(() => {
+        document.documentElement.classList.remove('theme-wave-active');
+      });
     };
   </script>
 </head>
@@ -144,6 +214,23 @@ const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8080';
     </main>
     <slot name="footer" />
   </div>
+
+  <!-- Floating Telegram Support Button (Nomor 3) -->
+  <a
+    href="https://t.me/your_telegram_username"
+    target="_blank"
+    rel="noopener noreferrer"
+    class="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-full bg-[#24A1DE] hover:bg-[#1d8dc4] text-white font-extrabold text-xs shadow-xl shadow-[#24A1DE]/30 cursor-pointer select-none"
+    id="telegram-cs-float"
+    style="transition: transform 0.2s ease, background-color 0.2s ease;"
+  >
+    <div class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+      <svg class="w-4 h-4 text-white fill-current" viewBox="0 0 24 24">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.02-1.96 1.25-5.54 3.69-.52.36-1 .54-1.42.53-.47-.01-1.37-.26-2.03-.48-.82-.27-1.47-.42-1.42-.88.03-.24.37-.49 1.02-.75 3.99-1.74 6.66-2.89 8.01-3.46 3.81-1.6 4.6-1.88 5.12-1.89.11 0 .37.03.54.17.14.12.18.28.2.45-.02.07-.02.13-.03.22z"/>
+      </svg>
+    </div>
+    <span class="pr-0.5">Butuh Bantuan?</span>
+  </a>
 
   <script define:vars={{ API_URL }}>
     // Make API URL globally available

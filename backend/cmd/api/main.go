@@ -80,7 +80,8 @@ func main() {
 	restockHandler := handler.NewRestockHandler(restockRepo, productRepo)
 
 	// ─── Initialize Middleware ───────────────────────────
-	checkoutRateLimiter := middleware.NewRateLimiter(redisClient, 3, 600, "rl:checkout") // 3 per 10 min
+	checkoutRateLimiter := middleware.NewRateLimiter(redisClient, 10, 1800, "rl:checkout") // 10 per 30 min (1800 sec)
+	lookupRateLimiter := middleware.NewRateLimiter(redisClient, 10, 1800, "rl:lookup")       // 10 per 30 min (1800 sec)
 
 	// ─── Setup Chi Router ────────────────────────────────
 	r := chi.NewRouter()
@@ -109,9 +110,9 @@ func main() {
 		// Checkout (rate-limited)
 		r.With(checkoutRateLimiter.Middleware).Post("/checkout", orderHandler.Checkout)
 
-		// Order endpoints
-		r.Get("/orders/lookup", orderHandler.OrderLookup)
-		r.Get("/orders/download", orderHandler.DownloadCredentials)
+		// Order endpoints (rate-limited: 10 percobaan / 30 menit)
+		r.With(lookupRateLimiter.Middleware).Get("/orders/lookup", orderHandler.OrderLookup)
+		r.With(lookupRateLimiter.Middleware).Get("/orders/download", orderHandler.DownloadCredentials)
 		r.Post("/orders/simulate-pay", orderHandler.SimulatePay)
 
 		// Webhook endpoint (Duitku callback — no rate limit, no CORS)

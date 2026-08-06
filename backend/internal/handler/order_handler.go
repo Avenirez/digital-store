@@ -54,10 +54,10 @@ func NewOrderHandler(
 
 // CheckoutRequest is the JSON body for POST /api/v1/checkout.
 type CheckoutRequest struct {
-	ProductSlug   string `json:"product_slug"`
-	CustomerEmail string `json:"customer_email"`
-	CustomerName  string `json:"customer_name"`
-	Quantity      int    `json:"quantity"`
+	ProductSlug  string `json:"product_slug"`
+	Pin          string `json:"pin"`
+	CustomerName string `json:"customer_name"`
+	Quantity     int    `json:"quantity"`
 }
 
 // Checkout handles POST /api/v1/checkout
@@ -70,15 +70,19 @@ func (h *OrderHandler) Checkout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Validate input
-	if req.ProductSlug == "" || req.CustomerEmail == "" {
-		writeError(w, http.StatusBadRequest, "product_slug and customer_email are required")
+	if req.ProductSlug == "" || req.Pin == "" {
+		writeError(w, http.StatusBadRequest, "product_slug and pin are required")
+		return
+	}
+	if len(req.Pin) < 4 || len(req.Pin) > 10 {
+		writeError(w, http.StatusBadRequest, "PIN must be between 4 and 10 digits")
 		return
 	}
 	if req.Quantity <= 0 {
 		req.Quantity = 1
 	}
 	if req.CustomerName == "" {
-		req.CustomerName = strings.Split(req.CustomerEmail, "@")[0]
+		req.CustomerName = "Pembeli"
 	}
 
 	ctx := r.Context()
@@ -115,12 +119,12 @@ func (h *OrderHandler) Checkout(w http.ResponseWriter, r *http.Request) {
 
 	// 5. Create order in DB
 	order := &repository.Order{
-		OrderNumber:   orderNumber,
-		CustomerEmail: req.CustomerEmail,
-		ProductID:     product.ID,
-		Quantity:      req.Quantity,
-		TotalAmount:   totalAmount,
-		Status:        repository.OrderStatusPending,
+		OrderNumber: orderNumber,
+		Pin:         req.Pin,
+		ProductID:   product.ID,
+		Quantity:    req.Quantity,
+		TotalAmount: totalAmount,
+		Status:      repository.OrderStatusPending,
 	}
 
 	if err := h.orderRepo.Create(ctx, order); err != nil {
@@ -163,7 +167,7 @@ func (h *OrderHandler) Checkout(w http.ResponseWriter, r *http.Request) {
 		orderNumber,
 		int64(totalAmount),
 		productDesc,
-		req.CustomerEmail,
+		"buyer@digitalstore.local",
 		req.CustomerName,
 	)
 
@@ -229,6 +233,14 @@ func (h *OrderHandler) SimulatePay(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("[SIMULATE-PAY] Order %s marked as PAID, %d stocks sold", order.OrderNumber, soldCount)
 
+	// Send Telegram alert
+	product, _ := h.productRepo.GetByID(ctx, order.ProductID)
+	productTitle := "Digital Account"
+	if product != nil {
+		productTitle = product.Title
+	}
+	h.telegram.AlertNewOrder(order.OrderNumber, "Pembeli (Website)", order.TotalAmount, productTitle)
+
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"message":      "Payment simulated successfully!",
 		"order_number": order.OrderNumber,
@@ -238,26 +250,26 @@ func (h *OrderHandler) SimulatePay(w http.ResponseWriter, r *http.Request) {
 
 // ─── Guest Order Lookup ──────────────────────────────────────────
 
-// OrderLookup handles GET /api/v1/orders/lookup?order_id=...&email=...
+// OrderLookup handles GET /api/v1/orders/lookup?order_id=...&pin=...
 func (h *OrderHandler) OrderLookup(w http.ResponseWriter, r *http.Request) {
 	orderID := r.URL.Query().Get("order_id")
-	email := r.URL.Query().Get("email")
+	pin := r.URL.Query().Get("pin")
 
-	if orderID == "" || email == "" {
-		writeError(w, http.StatusBadRequest, "order_id and email are required")
+	if orderID == "" || pin == "" {
+		writeError(w, http.StatusBadRequest, "order_id and pin are required")
 		return
 	}
 
 	ctx := r.Context()
 
-	// Try lookup by order_number first, then by UUID
-	order, err := h.orderRepo.GetByOrderNumberAndEmail(ctx, orderID, email)
+	// Try lookup by order_number and pin
+	order, err := h.orderRepo.GetByOrderNumberAndPin(ctx, orderID, pin)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			// Try by UUID
 			order, err = h.orderRepo.GetByID(ctx, orderID)
-			if err != nil || order.CustomerEmail != email {
-				writeError(w, http.StatusNotFound, "Order not found")
+			if err != nil || order.Pin != pin {
+				writeError(w, http.StatusNotFound, "Nomor Pesanan atau PIN yang kamu masukkan salah")
 				return
 			}
 		} else {
@@ -268,7 +280,7 @@ func (h *OrderHandler) OrderLookup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := map[string]interface{}{
-		"order":  order,
+		"order": order,
 	}
 
 	// If order is PAID, include decrypted credentials
@@ -300,25 +312,25 @@ func (h *OrderHandler) OrderLookup(w http.ResponseWriter, r *http.Request) {
 
 // ─── Credentials Download (.txt) ─────────────────────────────────
 
-// DownloadCredentials handles GET /api/v1/orders/download?order_id=...&email=...
+// DownloadCredentials handles GET /api/v1/orders/download?order_id=...&pin=...
 // Generates a .txt file in-memory and streams it directly to the response.
 func (h *OrderHandler) DownloadCredentials(w http.ResponseWriter, r *http.Request) {
 	orderID := r.URL.Query().Get("order_id")
-	email := r.URL.Query().Get("email")
+	pin := r.URL.Query().Get("pin")
 
-	if orderID == "" || email == "" {
-		writeError(w, http.StatusBadRequest, "order_id and email are required")
+	if orderID == "" || pin == "" {
+		writeError(w, http.StatusBadRequest, "order_id and pin are required")
 		return
 	}
 
 	ctx := r.Context()
 
-	// Verify order ownership
-	order, err := h.orderRepo.GetByOrderNumberAndEmail(ctx, orderID, email)
+	// Verify order ownership via PIN
+	order, err := h.orderRepo.GetByOrderNumberAndPin(ctx, orderID, pin)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			order, err = h.orderRepo.GetByID(ctx, orderID)
-			if err != nil || order.CustomerEmail != email {
+			if err != nil || order.Pin != pin {
 				writeError(w, http.StatusNotFound, "Order not found")
 				return
 			}

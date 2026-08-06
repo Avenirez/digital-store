@@ -13,7 +13,8 @@ import (
 type Order struct {
 	ID            string  `json:"id"`
 	OrderNumber   string  `json:"order_number"`
-	CustomerEmail string  `json:"customer_email"`
+	CustomerEmail string  `json:"customer_email,omitempty"`
+	Pin           string  `json:"pin"`
 	ProductID     string  `json:"product_id"`
 	Quantity      int     `json:"quantity"`
 	TotalAmount   float64 `json:"total_amount"`
@@ -45,14 +46,15 @@ func NewOrderRepo(db *pgxpool.Pool) *OrderRepo {
 // Create inserts a new order and returns its generated UUID.
 func (r *OrderRepo) Create(ctx context.Context, order *Order) error {
 	query := `
-		INSERT INTO orders (order_number, customer_email, product_id, quantity, total_amount, status)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO orders (order_number, customer_email, pin, product_id, quantity, total_amount, status)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		RETURNING id, created_at::text, updated_at::text
 	`
 
 	err := r.db.QueryRow(ctx, query,
 		order.OrderNumber,
 		order.CustomerEmail,
+		order.Pin,
 		order.ProductID,
 		order.Quantity,
 		order.TotalAmount,
@@ -68,7 +70,7 @@ func (r *OrderRepo) Create(ctx context.Context, order *Order) error {
 // GetByID fetches a single order by its UUID.
 func (r *OrderRepo) GetByID(ctx context.Context, id string) (*Order, error) {
 	query := `
-		SELECT id, order_number, customer_email, COALESCE(product_id::text, ''),
+		SELECT id, order_number, COALESCE(customer_email, ''), COALESCE(pin, '123456'), COALESCE(product_id::text, ''),
 			   quantity, total_amount, status,
 			   COALESCE(snap_token, ''), COALESCE(snap_token, ''),
 			   created_at::text, updated_at::text
@@ -77,7 +79,7 @@ func (r *OrderRepo) GetByID(ctx context.Context, id string) (*Order, error) {
 
 	var o Order
 	err := r.db.QueryRow(ctx, query, id).Scan(
-		&o.ID, &o.OrderNumber, &o.CustomerEmail, &o.ProductID,
+		&o.ID, &o.OrderNumber, &o.CustomerEmail, &o.Pin, &o.ProductID,
 		&o.Quantity, &o.TotalAmount, &o.Status,
 		&o.PaymentURL, &o.DuitkuRef,
 		&o.CreatedAt, &o.UpdatedAt,
@@ -94,7 +96,7 @@ func (r *OrderRepo) GetByID(ctx context.Context, id string) (*Order, error) {
 // GetByOrderNumber fetches a single order by order number.
 func (r *OrderRepo) GetByOrderNumber(ctx context.Context, orderNumber string) (*Order, error) {
 	query := `
-		SELECT id, order_number, customer_email, COALESCE(product_id::text, ''),
+		SELECT id, order_number, COALESCE(customer_email, ''), COALESCE(pin, '123456'), COALESCE(product_id::text, ''),
 			   quantity, total_amount, status,
 			   COALESCE(snap_token, ''), COALESCE(snap_token, ''),
 			   created_at::text, updated_at::text
@@ -103,7 +105,7 @@ func (r *OrderRepo) GetByOrderNumber(ctx context.Context, orderNumber string) (*
 
 	var o Order
 	err := r.db.QueryRow(ctx, query, orderNumber).Scan(
-		&o.ID, &o.OrderNumber, &o.CustomerEmail, &o.ProductID,
+		&o.ID, &o.OrderNumber, &o.CustomerEmail, &o.Pin, &o.ProductID,
 		&o.Quantity, &o.TotalAmount, &o.Status,
 		&o.PaymentURL, &o.DuitkuRef,
 		&o.CreatedAt, &o.UpdatedAt,
@@ -117,20 +119,20 @@ func (r *OrderRepo) GetByOrderNumber(ctx context.Context, orderNumber string) (*
 	return &o, nil
 }
 
-// GetByOrderNumberAndEmail fetches an order for guest lookup (requires both fields to match).
-func (r *OrderRepo) GetByOrderNumberAndEmail(ctx context.Context, orderNumber, email string) (*Order, error) {
+// GetByOrderNumberAndPin fetches an order for guest lookup (requires order number & PIN).
+func (r *OrderRepo) GetByOrderNumberAndPin(ctx context.Context, orderNumber, pin string) (*Order, error) {
 	query := `
-		SELECT id, order_number, customer_email, COALESCE(product_id::text, ''),
+		SELECT id, order_number, COALESCE(customer_email, ''), COALESCE(pin, '123456'), COALESCE(product_id::text, ''),
 			   quantity, total_amount, status,
 			   COALESCE(snap_token, ''), COALESCE(snap_token, ''),
 			   created_at::text, updated_at::text
 		FROM orders
-		WHERE order_number = $1 AND customer_email = $2
+		WHERE order_number = $1 AND pin = $2
 	`
 
 	var o Order
-	err := r.db.QueryRow(ctx, query, orderNumber, email).Scan(
-		&o.ID, &o.OrderNumber, &o.CustomerEmail, &o.ProductID,
+	err := r.db.QueryRow(ctx, query, orderNumber, pin).Scan(
+		&o.ID, &o.OrderNumber, &o.CustomerEmail, &o.Pin, &o.ProductID,
 		&o.Quantity, &o.TotalAmount, &o.Status,
 		&o.PaymentURL, &o.DuitkuRef,
 		&o.CreatedAt, &o.UpdatedAt,
@@ -139,7 +141,7 @@ func (r *OrderRepo) GetByOrderNumberAndEmail(ctx context.Context, orderNumber, e
 		if err == pgx.ErrNoRows {
 			return nil, err
 		}
-		return nil, fmt.Errorf("order_repo.GetByOrderNumberAndEmail: %w", err)
+		return nil, fmt.Errorf("order_repo.GetByOrderNumberAndPin: %w", err)
 	}
 	return &o, nil
 }

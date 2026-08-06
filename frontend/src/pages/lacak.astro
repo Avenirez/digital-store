@@ -11,14 +11,14 @@ import CopyBox from '../components/CopyBox.astro';
   <div class="max-w-2xl mx-auto px-4 sm:px-6 py-12">
     <div class="text-center mb-10 animate-fade-in">
       <h1 class="text-2xl sm:text-3xl font-extrabold text-[#87533d] dark:text-[#faf0e6] mb-3">Lacak Pesanan</h1>
-      <p class="text-[#9e644c] dark:text-[#e5d4c5] text-sm font-medium">Masukkan Order ID dan email untuk melihat status pesanan</p>
+      <p class="text-[#9e644c] dark:text-[#e5d4c5] text-sm font-medium">Masukkan Nomor Pesanan dan PIN Keamanan Anda untuk melihat status pesanan</p>
     </div>
 
     <!-- Lookup Form -->
     <div class="p-6 rounded-xl bg-[#ffffff]/90 dark:bg-[#1c1510]/95 border border-[#e5d4c5] dark:border-[#3d2d22] mb-8 animate-slide-up shadow-sm">
       <form id="lookup-form" class="space-y-4">
         <div>
-          <label for="order_id" class="block text-xs font-black text-[#2b1f17] dark:text-[#faf0e6] mb-1.5">Order ID / Nomor Pesanan</label>
+          <label for="order_id" class="block text-xs font-black text-[#2b1f17] dark:text-[#faf0e6] mb-1.5">Nomor Pesanan</label>
           <input
             type="text"
             id="order_id"
@@ -29,14 +29,17 @@ import CopyBox from '../components/CopyBox.astro';
           />
         </div>
         <div>
-          <label for="email" class="block text-xs font-black text-[#2b1f17] dark:text-[#faf0e6] mb-1.5">Email</label>
+          <label for="pin" class="block text-xs font-black text-[#2b1f17] dark:text-[#faf0e6] mb-1.5">PIN Keamanan</label>
           <input
-            type="email"
-            id="email"
-            name="email"
+            type="password"
+            id="pin"
+            name="pin"
             required
-            placeholder="email@contoh.com"
-            class="w-full px-3.5 py-2.5 rounded-lg bg-[#faf0e6] dark:bg-[#2b1f17] border border-[#e5d4c5] dark:border-[#3d2d22] text-sm text-[#4d3a2c] dark:text-[#faf0e6] placeholder:text-[#9e644c]/70 dark:placeholder:text-[#b8856c]/60 focus:outline-none focus:border-[#87533d] focus:ring-1 focus:ring-[#87533d]/30 transition-all font-bold"
+            maxlength="6"
+            pattern="[0-9]{6}"
+            inputmode="numeric"
+            placeholder="Contoh: 123456"
+            class="w-full px-3.5 py-2.5 rounded-lg bg-[#faf0e6] dark:bg-[#2b1f17] border border-[#e5d4c5] dark:border-[#3d2d22] text-sm text-[#4d3a2c] dark:text-[#faf0e6] placeholder:text-[#9e644c]/70 dark:placeholder:text-[#b8856c]/60 focus:outline-none focus:border-[#87533d] focus:ring-1 focus:ring-[#87533d]/30 transition-all font-bold tracking-widest"
           />
         </div>
         <button
@@ -85,17 +88,28 @@ import CopyBox from '../components/CopyBox.astro';
 
       <!-- Credentials Section (shown only for PAID orders) -->
       <div id="credentials-section" class="hidden">
-        <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
           <h2 class="text-lg font-bold text-[#1c1510]">Informasi Akun</h2>
-          <button
-            id="download-btn"
-            class="px-4 py-2 rounded-lg bg-[#f3e3d3] border border-[#e5d4c5] text-xs font-bold text-[#1c1510] hover:bg-[#e4cdb7] transition-all flex items-center gap-1.5"
-          >
-            <svg class="w-3.5 h-3.5 text-[#5c4a3b]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-            </svg>
-            Download .txt
-          </button>
+          <div class="flex items-center gap-2">
+            <button
+              id="copy-all-btn"
+              class="px-3.5 py-2 rounded-lg bg-[#faf0e6] dark:bg-[#2b1f17] border border-[#e5d4c5] dark:border-[#3d2d22] text-xs font-bold text-[#87533d] dark:text-[#faf0e6] hover:bg-[#e4cdb7] dark:hover:bg-[#38291f] transition-all flex items-center gap-1.5"
+            >
+              <svg class="w-3.5 h-3.5 text-[#87533d] dark:text-[#b8856c]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
+              </svg>
+              <span>Salin Semua Akun</span>
+            </button>
+            <button
+              id="download-btn"
+              class="px-3.5 py-2 rounded-lg bg-[#f3e3d3] dark:bg-[#3d2d22] border border-[#e5d4c5] dark:border-[#4d3a2c] text-xs font-bold text-[#1c1510] dark:text-[#faf0e6] hover:bg-[#e4cdb7] dark:hover:bg-[#4d3a2c] transition-all flex items-center gap-1.5"
+            >
+              <svg class="w-3.5 h-3.5 text-[#5c4a3b] dark:text-[#b8856c]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+              </svg>
+              Download .txt
+            </button>
+          </div>
         </div>
         <div id="credentials-list" class="space-y-3">
           <!-- Dynamically populated -->
@@ -132,9 +146,11 @@ import CopyBox from '../components/CopyBox.astro';
   const credentialsList = document.getElementById('credentials-list');
   const pendingSection = document.getElementById('pending-section');
   const downloadBtn = document.getElementById('download-btn');
+  const copyAllBtn = document.getElementById('copy-all-btn');
 
   let currentOrderId = '';
-  let currentEmail = '';
+  let currentPin = '';
+  let currentCredentials: any[] = [];
 
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -145,15 +161,21 @@ import CopyBox from '../components/CopyBox.astro';
 
     const formData = new FormData(form);
     currentOrderId = formData.get('order_id') as string;
-    currentEmail = formData.get('email') as string;
+    currentPin = formData.get('pin') as string;
 
     try {
-      const params = new URLSearchParams({ order_id: currentOrderId, email: currentEmail });
+      const params = new URLSearchParams({ order_id: currentOrderId, pin: currentPin });
       const res = await fetch(`${(window as any).__API_URL__}/api/v1/orders/lookup?${params}`);
       const data = await res.json();
 
       if (!res.ok) {
-        if (errorText) errorText.textContent = data.error || 'Pesanan tidak ditemukan.';
+        if (res.status === 429) {
+          const retrySec = data.retry_after_seconds || 1800;
+          const mins = Math.ceil(retrySec / 60);
+          if (errorText) errorText.textContent = `🚫 Terlalu banyak percobaan salah (Maks 10x). Silakan coba lagi dalam ${mins} menit.`;
+        } else {
+          if (errorText) errorText.textContent = data.error || 'Nomor Pesanan atau PIN yang kamu masukkan salah';
+        }
         errorEl?.classList.remove('hidden');
       } else {
         displayResults(data);
@@ -198,6 +220,7 @@ import CopyBox from '../components/CopyBox.astro';
     pendingSection?.classList.add('hidden');
 
     if (order.status === 'PAID' && data.credentials) {
+      currentCredentials = data.credentials;
       credentialsSection?.classList.remove('hidden');
       if (credentialsList) {
         credentialsList.innerHTML = '';
@@ -209,7 +232,7 @@ import CopyBox from '../components/CopyBox.astro';
             <div class="space-y-2">
               <div class="p-3 rounded-lg bg-[#faf0e6] border border-[#e5d4c5]">
                 <div class="flex items-center justify-between mb-1">
-                  <span class="text-xs font-bold text-[#5c4a3b] uppercase tracking-wider">EMAIL</span>
+                  <span class="text-xs font-bold text-[#5c4a3b] uppercase tracking-wider">WEBSITE</span>
                   <button class="copy-cred p-1 rounded hover:bg-[#e4cdb7] transition-colors" data-value="${cred.email}" aria-label="Copy email">
                     <svg class="w-3.5 h-3.5 text-[#5c4a3b] hover:text-[#1c1510]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" /></svg>
                   </button>
@@ -274,10 +297,24 @@ import CopyBox from '../components/CopyBox.astro';
     resultsEl?.classList.remove('hidden');
   }
 
+  // Copy All Credentials
+  copyAllBtn?.addEventListener('click', async () => {
+    if (!currentCredentials || currentCredentials.length === 0) return;
+    const textToCopy = currentCredentials.map((c, i) => `Akun #${i + 1}\nEmail/ID: ${c.email}\nPassword: ${c.password}`).join('\n\n');
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      const span = copyAllBtn.querySelector('span');
+      if (span) {
+        span.textContent = 'Tersalin! ✅';
+        setTimeout(() => { span.textContent = 'Salin Semua Akun'; }, 2000);
+      }
+    } catch {}
+  });
+
   // Download .txt
   downloadBtn?.addEventListener('click', () => {
-    if (!currentOrderId || !currentEmail) return;
-    const params = new URLSearchParams({ order_id: currentOrderId, email: currentEmail });
+    if (!currentOrderId || !currentPin) return;
+    const params = new URLSearchParams({ order_id: currentOrderId, pin: currentPin });
     window.location.href = `${(window as any).__API_URL__}/api/v1/orders/download?${params}`;
   });
 </script>
