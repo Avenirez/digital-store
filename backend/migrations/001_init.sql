@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS orders (
     total_amount    NUMERIC(12, 2) NOT NULL,
     status          VARCHAR(32) NOT NULL DEFAULT 'PENDING',
     snap_token      VARCHAR(255),
+    pin             VARCHAR(10) DEFAULT '123456',
     created_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
