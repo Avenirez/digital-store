@@ -84,17 +84,36 @@ func (t *TelegramService) sendMessage(message string) error {
 	return nil
 }
 
-// ─── Pre-built Alert Templates ───────────────────────────────────
+// formatIDR formats a float64 amount into Indonesian Rupiah string with dot separators (e.g. 1103 -> "1.103")
+func formatIDR(amount float64) string {
+	n := int64(amount)
+	str := fmt.Sprintf("%d", n)
+	l := len(str)
+	if l <= 3 {
+		return str
+	}
+	var result []byte
+	for i, c := range str {
+		if i > 0 && (l-i)%3 == 0 {
+			result = append(result, '.')
+		}
+		result = append(result, byte(c))
+	}
+	return string(result)
+}
 
 // AlertNewOrder sends an alert when a new order is paid.
-func (t *TelegramService) AlertNewOrder(orderNumber, customerEmail string, amount float64, productTitle string) {
+func (t *TelegramService) AlertNewOrder(orderNumber, customerInfo string, amount float64, productTitle string) {
+	if customerInfo == "" {
+		customerInfo = "Pembeli"
+	}
 	msg := fmt.Sprintf(
 		"💰 <b>New Order Paid!</b>\n\n"+
 			"📦 Order: <code>%s</code>\n"+
 			"📧 Customer: %s\n"+
-			"💵 Amount: Rp %,.0f\n"+
+			"💵 Amount: Rp %s\n"+
 			"🏷️ Product: %s",
-		orderNumber, customerEmail, amount, productTitle,
+		orderNumber, customerInfo, formatIDR(amount), productTitle,
 	)
 	t.SendAlert(msg)
 }
