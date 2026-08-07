@@ -40,14 +40,8 @@ if [ ! -f ".env" ]; then
     if [ -f ".env.production" ]; then
         cp .env.production .env
         echo "  → Disalin dari .env.production → .env"
-        echo "  ⚠️  PENTING: Edit file .env dan ganti semua placeholder!"
-        echo "     nano /var/www/digital-store/.env"
-        echo ""
-        echo "  Tekan Enter setelah selesai mengedit .env..."
-        read -r
     else
         echo "  ❌ File .env.production tidak ditemukan!"
-        echo "     Buat file .env secara manual di $PROJECT_DIR/.env"
         exit 1
     fi
 else
