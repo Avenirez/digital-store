@@ -256,13 +256,15 @@ export async function getStaticPaths() {
                       PIN Keamanan <span class="text-rose-500">*</span>
                     </label>
                     <input
-                      type="password"
+                      type="text"
                       id="pin"
                       name="pin"
                       required
                       maxlength="6"
                       pattern="[0-9]{6}"
                       inputmode="numeric"
+                      autocomplete="off"
+                      style="-webkit-text-security: disc;"
                       placeholder="Contoh: 123456"
                       class="w-full px-3.5 py-2.5 rounded-lg bg-[#faf0e6] dark:bg-[#2b1f17] border border-[#e5d4c5] dark:border-[#3d2d22] text-sm text-[#4d3a2c] dark:text-[#faf0e6] placeholder:text-[#9e644c]/70 dark:placeholder:text-[#b8856c]/60 focus:outline-none focus:border-[#87533d] focus:ring-1 focus:ring-[#87533d]/30 transition-all font-bold tracking-widest"
                     />
@@ -273,13 +275,15 @@ export async function getStaticPaths() {
                       Konfirmasi PIN Keamanan <span class="text-rose-500">*</span>
                     </label>
                     <input
-                      type="password"
+                      type="text"
                       id="confirm_pin"
                       name="confirm_pin"
                       required
                       maxlength="6"
                       pattern="[0-9]{6}"
                       inputmode="numeric"
+                      autocomplete="off"
+                      style="-webkit-text-security: disc;"
                       placeholder="Masukkan ulang PIN"
                       class="w-full px-3.5 py-2.5 rounded-lg bg-[#faf0e6] dark:bg-[#2b1f17] border border-[#e5d4c5] dark:border-[#3d2d22] text-sm text-[#4d3a2c] dark:text-[#faf0e6] placeholder:text-[#9e644c]/70 dark:placeholder:text-[#b8856c]/60 focus:outline-none focus:border-[#87533d] focus:ring-1 focus:ring-[#87533d]/30 transition-all font-bold tracking-widest"
                     />

@@ -159,35 +159,29 @@ func (h *OrderHandler) Checkout(w http.ResponseWriter, r *http.Request) {
 		totalAmount = baseAmount + float64(uniqueCode)
 	}
 
-	// 4. Generate unique order number with ID- prefix and 001-100 daily reset logic (WIB UTC+7)
-	datePrefix := fmt.Sprintf("ID-%s-", dateStr)
-
-	var seqNum int
+	// 4. Generate unique order number (000 - 999)
+	var seqNum int = -1
 	if h.redisClient != nil {
-		redisKey := fmt.Sprintf("order:daily_seq:%s", dateStr)
+		redisKey := fmt.Sprintf("order:seq_000_999:%s", dateStr)
 		val, err := h.redisClient.Incr(ctx, redisKey).Result()
 		if err == nil {
 			if val == 1 {
 				_ = h.redisClient.Expire(ctx, redisKey, 48*time.Hour).Err()
 			}
-			if val > 100 {
-				seqNum = int(((val - 1) % 100) + 1)
-			} else {
-				seqNum = int(val)
-			}
+			seqNum = int((val - 1) % 1000)
 		}
 	}
 
-	if seqNum <= 0 {
+	if seqNum < 0 {
 		var err error
-		seqNum, err = h.orderRepo.GetNextDailySeq(ctx, datePrefix)
+		seqNum, err = h.orderRepo.GetNextSeq(ctx)
 		if err != nil {
-			log.Printf("[CHECKOUT] GetNextDailySeq error: %v", err)
-			seqNum = 1
+			log.Printf("[CHECKOUT] GetNextSeq error: %v", err)
+			seqNum = 0
 		}
 	}
 
-	orderNumber := fmt.Sprintf("%s%03d", datePrefix, seqNum)
+	orderNumber := fmt.Sprintf("%03d", seqNum)
 
 	// 5. Create order in DB
 	order := &repository.Order{
