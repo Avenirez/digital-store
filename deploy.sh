@@ -65,6 +65,7 @@ fi
 # ─── Step 5: Build & Start Containers ──────────────
 echo "[4/7] 🐳 Membangun dan menjalankan Docker containers..."
 docker compose down --remove-orphans 2>/dev/null || true
+docker rm -f digitalstore_postgres digitalstore_redis digitalstore_backend digitalstore_frontend digitalstore_nginx digitalstore_certbot 2>/dev/null || true
 docker compose up -d --build
 
 echo "  → Menunggu containers sehat (15 detik)..."
