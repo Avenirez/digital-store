@@ -71,21 +71,6 @@ import Footer from '../components/Footer.astro';
             <div class="w-44 h-44 bg-white p-2 rounded-lg border flex items-center justify-center shadow-inner">
               <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=00020101021126580014ID.LINKAJA.WWW01189360091100220260805204000000005802ID5911LEXAA%20STORE6015YOGYAKARTA6105552816304" alt="QRIS Lexaa Store" class="w-full h-full object-contain" />
             </div>
-            <span class="text-[11px] text-[#5c4a3b] dark:text-[#d3c2b4] mt-2 font-medium">NPMI: LEXAA STORE QRIS</span>
-          </div>
-        </div>
-
-        <!-- Method 2: Transfer Bank Manual -->
-        <div class="p-4 rounded-xl bg-[#faf0e6] dark:bg-[#342a22] border border-[#e5d4c5] dark:border-[#4a3b30] space-y-2">
-          <div class="font-bold text-sm text-[#1c1510] dark:text-[#faf0e6] flex items-center justify-between">
-            <span>Bank BCA</span>
-            <span class="text-xs font-normal text-[#5c4a3b] dark:text-[#d3c2b4]">a.n. Lexaa Store Owner</span>
-          </div>
-          <div class="flex items-center justify-between p-2.5 rounded-lg bg-white dark:bg-black/40 border border-[#e5d4c5] dark:border-[#4a3b30]">
-            <span class="font-mono font-bold text-sm text-[#1c1510] dark:text-[#faf0e6]">1234 5678 90</span>
-            <button id="copy-bank-btn" class="px-2 py-1 rounded bg-[#f3e3d3] hover:bg-[#e4cdb7] dark:bg-[#4a3b30] dark:hover:bg-[#5c4a3b] text-xs font-bold text-[#1c1510] dark:text-[#faf0e6]">
-              <span id="copy-bank-lbl">Salin Rekening</span>
-            </button>
           </div>
         </div>
       </div>
@@ -104,12 +89,6 @@ import Footer from '../components/Footer.astro';
 
     <!-- Actions -->
     <div class="flex flex-col sm:flex-row gap-3 justify-center">
-      <button
-        id="simulate-pay-btn"
-        class="px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs transition-colors shadow-md flex items-center justify-center gap-2"
-      >
-        <span>⚡</span> Simulasi Bayar (Tes Listener)
-      </button>
       <a
         id="track-link"
         href="/lacak"
@@ -194,19 +173,6 @@ import Footer from '../components/Footer.astro';
     } catch {}
   });
 
-  // Copy Bank
-  const copyBankBtn = document.getElementById('copy-bank-btn');
-  const copyBankLbl = document.getElementById('copy-bank-lbl');
-  copyBankBtn?.addEventListener('click', async () => {
-    try {
-      await navigator.clipboard.writeText('1234567890');
-      if (copyBankLbl) {
-        copyBankLbl.textContent = 'Tersalin! ✅';
-        setTimeout(() => { copyBankLbl.textContent = 'Salin Rekening'; }, 2000);
-      }
-    } catch {}
-  });
-
   // Auto Polling Status every 3 seconds
   const pollInterval = setInterval(async () => {
     try {
@@ -221,31 +187,4 @@ import Footer from '../components/Footer.astro';
       }
     } catch {}
   }, 3000);
-
-  // Simulate Pay Button (Testing)
-  const simBtn = document.getElementById('simulate-pay-btn') as HTMLButtonElement;
-  simBtn?.addEventListener('click', async () => {
-    simBtn.disabled = true;
-    simBtn.textContent = 'Memproses Simulasi...';
-
-    try {
-      const res = await fetch(`${(window as any).__API_URL__}/api/v1/orders/simulate-pay`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ order_number: orderId }),
-      });
-
-      if (res.ok) {
-        window.location.href = `/lacak?order_id=${orderId}`;
-      } else {
-        alert('Gagal mensimulasikan pembayaran.');
-        simBtn.disabled = false;
-        simBtn.textContent = '⚡ Simulasi Bayar (Tes Listener)';
-      }
-    } catch {
-      alert('Gagal terhubung ke server.');
-      simBtn.disabled = false;
-      simBtn.textContent = '⚡ Simulasi Bayar (Tes Listener)';
-    }
-  });
 </script>
