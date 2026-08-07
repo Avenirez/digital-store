@@ -81,7 +81,7 @@ func main() {
 
 	// ─── Initialize Middleware ───────────────────────────
 	checkoutRateLimiter := middleware.NewRateLimiter(redisClient, 10, 1800, "rl:checkout") // 10 per 30 min (1800 sec)
-	lookupRateLimiter := middleware.NewRateLimiter(redisClient, 10, 1800, "rl:lookup")       // 10 per 30 min (1800 sec)
+	lookupRateLimiter := middleware.NewRateLimiter(redisClient, 120, 60, "rl:lookup")       // 120 per 60 sec
 
 	// ─── Setup Chi Router ────────────────────────────────
 	r := chi.NewRouter()
