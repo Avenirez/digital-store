@@ -40,7 +40,13 @@ func main() {
 	}
 	defer pool.Close()
 
-	// 1. Ensure product exists
+	// 1. Delete all products except CapCut
+	_, err = pool.Exec(ctx, "DELETE FROM products WHERE slug != $1", "capcut-premium-7-days")
+	if err != nil {
+		log.Printf("Warning: error deleting old products: %v", err)
+	}
+
+	// 2. Ensure Capcut product exists
 	var productID string
 	productTitle := "Capcut Premium (7 Hari)"
 	productSlug := "capcut-premium-7-days"
@@ -62,6 +68,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create/get product %s: %v", productTitle, err)
 	}
+
+	// 3. Clear existing stocks for CapCut to reset to exactly 5 accounts
+	_, _ = pool.Exec(ctx, "DELETE FROM product_stocks WHERE product_id = $1", productID)
 
 	accounts := []Account{
 		{Email: "blackbutterfly564@saovangtiles.site", Password: "masuk123"},
@@ -97,7 +106,6 @@ func main() {
 
 	fmt.Println("\n==========================================")
 	fmt.Printf("Produk: %s\n", productTitle)
-	fmt.Printf("Stok Baru Ditambahkan: %d akun\n", insertedCount)
-	fmt.Printf("Total Stok Tersedia di DB: %d akun\n", totalStock)
+	fmt.Printf("Total Stok Akun Capcut Tersedia di DB: %d akun\n", totalStock)
 	fmt.Println("==========================================")
 }
