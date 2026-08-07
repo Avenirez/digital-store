@@ -55,6 +55,10 @@ func main() {
 		log.Fatalf("Failed to init crypto service: %v", err)
 	}
 
+	// ─── Auto-seed CapCut product and default accounts ───────
+	database.EnsureDefaultCapcutStock(ctx, pgPool, cryptoSvc)
+
+
 	duitkuSvc := service.NewDuitkuService(
 		cfg.DuitkuMerchantCode,
 		cfg.DuitkuAPIKey,
