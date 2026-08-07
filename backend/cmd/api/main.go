@@ -142,7 +142,7 @@ func main() {
 	}
 
 	// ─── Start Background Workers ────────────────────────
-	expireWorker := service.NewExpireWorker(orderRepo, stockRepo, 1*time.Minute, 15*time.Minute)
+	expireWorker := service.NewExpireWorker(orderRepo, stockRepo, 1*time.Minute, 10*time.Minute)
 	go expireWorker.Start(ctx)
 
 	// ─── Start Server ────────────────────────────────────
