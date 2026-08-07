@@ -191,12 +191,13 @@ func (h *OrderHandler) Checkout(w http.ResponseWriter, r *http.Request) {
 
 	// 5. Create order in DB
 	order := &repository.Order{
-		OrderNumber: orderNumber,
-		Pin:         req.Pin,
-		ProductID:   product.ID,
-		Quantity:    req.Quantity,
-		TotalAmount: totalAmount,
-		Status:      repository.OrderStatusPending,
+		OrderNumber:   orderNumber,
+		CustomerEmail: req.CustomerName,
+		Pin:           req.Pin,
+		ProductID:     product.ID,
+		Quantity:      req.Quantity,
+		TotalAmount:   totalAmount,
+		Status:        repository.OrderStatusPending,
 	}
 
 	if err := h.orderRepo.Create(ctx, order); err != nil {
