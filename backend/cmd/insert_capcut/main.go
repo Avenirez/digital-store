@@ -40,11 +40,9 @@ func main() {
 	}
 	defer pool.Close()
 
-	// 1. Delete all products except CapCut
-	_, err = pool.Exec(ctx, "DELETE FROM products WHERE slug != $1", "capcut-premium-7-days")
-	if err != nil {
-		log.Printf("Warning: error deleting old products: %v", err)
-	}
+	// 1. Deactivate all non-Capcut products and remove their available stocks
+	_, _ = pool.Exec(ctx, "UPDATE products SET is_active = false WHERE slug != $1", "capcut-premium-7-days")
+	_, _ = pool.Exec(ctx, "DELETE FROM product_stocks WHERE product_id IN (SELECT id FROM products WHERE slug != $1)", "capcut-premium-7-days")
 
 	// 2. Ensure Capcut product exists
 	var productID string

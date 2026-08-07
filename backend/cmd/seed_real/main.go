@@ -45,8 +45,9 @@ func main() {
 	}
 	defer pool.Close()
 
-	// Clear all products except CapCut
-	_, _ = pool.Exec(ctx, "DELETE FROM products WHERE slug != 'capcut-premium-7-days'")
+	// Clear and deactivate non-Capcut products
+	_, _ = pool.Exec(ctx, "UPDATE products SET is_active = false WHERE slug != 'capcut-premium-7-days'")
+	_, _ = pool.Exec(ctx, "DELETE FROM product_stocks WHERE product_id IN (SELECT id FROM products WHERE slug != 'capcut-premium-7-days')")
 
 	products := []ProductSeed{
 		{
