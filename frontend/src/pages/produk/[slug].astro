@@ -7,6 +7,65 @@ import RestockForm from '../../components/RestockForm.astro';
 const { slug } = Astro.params;
 const API_URL = import.meta.env.PUBLIC_API_URL || '';
 
+const defaultProducts: Record<string, any> = {
+  'capcut-premium-7-days': {
+    title: 'Capcut Premium (7 Hari)',
+    slug: 'capcut-premium-7-days',
+    description: 'Akun Capcut Premium 7 Hari privat, akses penuh semua fitur efek & template pro.',
+    price_idr: 1000,
+    image_url: '/images/capcut.webp',
+    stock_count: 5,
+  },
+  'claude-ai-pro-1-bulan': {
+    title: 'Claude AI Pro (1 Bulan)',
+    slug: 'claude-ai-pro-1-bulan',
+    description: 'Akun Claude AI Pro 1 Bulan.',
+    price_idr: 55000,
+    image_url: '',
+    stock_count: 0,
+  },
+  'canva-pro-lifetime-1-tahun': {
+    title: 'Canva Pro Lifetime / 1 Tahun',
+    slug: 'canva-pro-lifetime-1-tahun',
+    description: 'Akun Canva Pro.',
+    price_idr: 25000,
+    image_url: '',
+    stock_count: 0,
+  },
+  'youtube-premium-1-bulan': {
+    title: 'YouTube Premium (1 Bulan)',
+    slug: 'youtube-premium-1-bulan',
+    description: 'Akun YouTube Premium.',
+    price_idr: 15000,
+    image_url: '',
+    stock_count: 0,
+  },
+  'spotify-premium-individual-1-bulan': {
+    title: 'Spotify Premium Individual (1 Bulan)',
+    slug: 'spotify-premium-individual-1-bulan',
+    description: 'Akun Spotify Premium.',
+    price_idr: 18000,
+    image_url: '',
+    stock_count: 0,
+  },
+  'netflix-premium-4k-uhd-1-bulan': {
+    title: 'Netflix Premium 4K UHD (1 Bulan)',
+    slug: 'netflix-premium-4k-uhd-1-bulan',
+    description: 'Akun Netflix Premium 4K.',
+    price_idr: 35000,
+    image_url: '',
+    stock_count: 0,
+  },
+  'chatgpt-plus-1-bulan': {
+    title: 'ChatGPT Plus (1 Bulan)',
+    slug: 'chatgpt-plus-1-bulan',
+    description: 'Akun ChatGPT Plus.',
+    price_idr: 45000,
+    image_url: '',
+    stock_count: 0,
+  },
+};
+
 let product: any = null;
 let notFound = false;
 
@@ -15,10 +74,12 @@ try {
   if (res.ok) {
     product = await res.json();
   } else {
-    notFound = true;
+    product = defaultProducts[slug || ''] || null;
+    if (!product) notFound = true;
   }
 } catch {
-  notFound = true;
+  product = defaultProducts[slug || ''] || null;
+  if (!product) notFound = true;
 }
 
 const priceFormatted = product ? new Intl.NumberFormat('id-ID', {
@@ -31,17 +92,29 @@ const isInStock = product?.stock_count > 0;
 
 // For SSG, we need to define all possible slugs
 export async function getStaticPaths() {
+  const defaultSlugs = [
+    'capcut-premium-7-days',
+    'claude-ai-pro-1-bulan',
+    'canva-pro-lifetime-1-tahun',
+    'youtube-premium-1-bulan',
+    'spotify-premium-individual-1-bulan',
+    'netflix-premium-4k-uhd-1-bulan',
+    'chatgpt-plus-1-bulan',
+  ];
+
   const API_URL = import.meta.env.PUBLIC_API_URL || '';
   try {
     const res = await fetch(`${API_URL}/api/v1/products`);
     if (res.ok) {
       const data = await res.json();
-      return (data.products || []).map((p: any) => ({
-        params: { slug: p.slug },
-      }));
+      if (data.products && data.products.length > 0) {
+        const fetchedSlugs = data.products.map((p: any) => p.slug);
+        const allSlugs = Array.from(new Set([...defaultSlugs, ...fetchedSlugs]));
+        return allSlugs.map((slug) => ({ params: { slug } }));
+      }
     }
   } catch {}
-  return [];
+  return defaultSlugs.map((slug) => ({ params: { slug } }));
 }
 ---
 
@@ -271,6 +344,36 @@ export async function getStaticPaths() {
       updatePrice();
     }
   });
+
+  // Load live product data on client
+  async function loadLiveProductData() {
+    const productSlug = (document.querySelector('input[name="product_slug"]') as HTMLInputElement)?.value;
+    if (!productSlug) return;
+
+    try {
+      const res = await fetch(`${(window as any).__API_URL__}/api/v1/products/${productSlug}`);
+      if (!res.ok) return;
+      const liveProduct = await res.json();
+      
+      if (liveProduct && liveProduct.price_idr) {
+        if (form) form.dataset.unitPrice = liveProduct.price_idr.toString();
+        
+        const liveFormatted = new Intl.NumberFormat('id-ID', {
+          style: 'currency',
+          currency: 'IDR',
+          minimumFractionDigits: 0,
+        }).format(liveProduct.price_idr);
+        
+        const priceMain = document.querySelector('.lg\\:col-span-2 .text-3xl');
+        if (priceMain) priceMain.textContent = liveFormatted;
+        
+        updatePrice();
+      }
+    } catch {}
+  }
+
+  document.addEventListener('DOMContentLoaded', loadLiveProductData);
+  loadLiveProductData();
 
   // Rate Limiting untuk Konfirmasi PIN Salah (10x per 30 menit)
   const MAX_MISMATCH = 10;
