@@ -102,7 +102,7 @@ func main() {
 	})
 
 	// ─── API v1 Routes ───────────────────────────────────
-	r.Route("/api/v1", func(r chi.Router) {
+	setupV1Routes := func(r chi.Router) {
 		// Product endpoints
 		r.Get("/products", productHandler.ListProducts)
 		r.Get("/products/{slug}", productHandler.GetProduct)
@@ -127,7 +127,10 @@ func main() {
 			r.Use(middleware.AdminAuth(cfg.AdminAPIKey))
 			r.Post("/stocks/bulk", adminHandler.BulkImport)
 		})
-	})
+	}
+
+	r.Route("/api/v1", setupV1Routes)
+	r.Route("/v1", setupV1Routes)
 
 	// ─── Create HTTP Server ──────────────────────────────
 	srv := &http.Server{

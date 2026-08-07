@@ -97,6 +97,20 @@ func main() {
 			ImageURL:    "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80",
 			Stocks:      []string{"claude_pro1@anthropic.com:ClaudeSonnet#35"},
 		},
+		{
+			Title:       "Capcut Premium (7 Hari)",
+			Slug:        "capcut-premium-7-days",
+			Description: "Akun Capcut Premium 7 Hari privat, akses penuh semua fitur efek & template pro.",
+			PriceIDR:    10000,
+			ImageURL:    "/images/capcut.webp",
+			Stocks: []string{
+				"blackbutterfly564@saovangtiles.site:masuk123",
+				"crazyswan547@submitreports.com:masuk123",
+				"heavymouse584@mailfirefly.com:masuk123",
+				"smallcat555@saovangtiles.site:masuk123",
+				"beautifullion284@phuongnhicare.com:masuk123",
+			},
+		},
 	}
 
 	for _, p := range products {

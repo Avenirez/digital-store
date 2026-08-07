@@ -103,7 +103,7 @@ func main() {
 			Slug:        "capcut-pro-1-month",
 			Description: "Akses seluruh fitur editor video premium CapCut: animasi pro, efek AI & tanpa watermark.",
 			PriceIDR:    22000,
-			ImageURL:    "https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?auto=format&fit=crop&w=600&q=80",
+			ImageURL:    "/images/capcut.webp",
 			Stocks:      []string{"cc1@video.com:cc123", "cc2@video.com:cc123"},
 		},
 		{
