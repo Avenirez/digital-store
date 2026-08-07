@@ -69,7 +69,7 @@ import Footer from '../components/Footer.astro';
           <div class="flex flex-col items-center justify-center p-3 rounded-lg bg-white dark:bg-black/40 border border-[#e5d4c5] dark:border-[#4a3b30]">
             <!-- Dummy / QRIS SVG generator or placeholder -->
             <div class="w-44 h-44 bg-white p-2 rounded-lg border flex items-center justify-center shadow-inner">
-              <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=00020101021126580014ID.LINKAJA.WWW01189360091100220260805204000000005802ID5911LEXAA%20STORE6015YOGYAKARTA6105552816304" alt="QRIS Lexaa Store" class="w-full h-full object-contain" />
+              <img id="qris-image" src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=00020101021126580014ID.LINKAJA.WWW01189360091100220260805204000000005802ID5911LEXAA%20STORE6015YOGYAKARTA6105552816304" alt="QRIS Lexaa Store" class="w-full h-full object-contain" />
             </div>
           </div>
         </div>
@@ -109,6 +109,42 @@ import Footer from '../components/Footer.astro';
 </BaseLayout>
 
 <script>
+  function crc16ccitt(str: string): string {
+    let crc = 0xFFFF;
+    for (let c = 0; c < str.length; c++) {
+      crc ^= str.charCodeAt(c) << 8;
+      for (let i = 0; i < 8; i++) {
+        if ((crc & 0x8000) !== 0) {
+          crc = ((crc << 1) ^ 0x1021) & 0xFFFF;
+        } else {
+          crc = (crc << 1) & 0xFFFF;
+        }
+      }
+    }
+    return crc.toString(16).toUpperCase().padStart(4, '0');
+  }
+
+  function makeDynamicQRIS(baseStr: string, amount: number): string {
+    let qris = baseStr.trim();
+    qris = qris.replace('010211', '010212');
+    const crcIdx = qris.lastIndexOf('6304');
+    if (crcIdx !== -1) {
+      qris = qris.substring(0, crcIdx);
+    }
+    const amtStr = Math.round(amount).toString();
+    const amtLen = amtStr.length < 10 ? '0' + amtStr.length : amtStr.length.toString();
+    const amtTag = '530336054' + amtLen + amtStr;
+    const idx58 = qris.indexOf('5802ID');
+    if (idx58 !== -1) {
+      qris = qris.substring(0, idx58) + amtTag + qris.substring(idx58);
+    } else {
+      qris = qris + amtTag;
+    }
+    qris = qris + '6304';
+    const checksum = crc16ccitt(qris);
+    return qris + checksum;
+  }
+
   const urlParams = new URLSearchParams(window.location.search);
   const orderId = urlParams.get('order_id') || urlParams.get('id') || '';
   const pinParam = urlParams.get('pin') || '';
@@ -148,6 +184,14 @@ import Footer from '../components/Footer.astro';
           const formatted = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(rawAmount);
           if (totalDisplay) totalDisplay.textContent = formatted;
           if (qrisHint) qrisHint.textContent = `yaitu ${formatted}`;
+
+          // Update QRIS image to Dynamic QRIS with exact amount
+          const qrisImg = document.getElementById('qris-image') as HTMLImageElement;
+          if (qrisImg && rawAmount > 0) {
+            const baseQR = '00020101021126580014ID.LINKAJA.WWW01189360091100220260805204000000005802ID5911LEXAA STORE6015YOGYAKARTA6105552816304';
+            const dynamicQR = makeDynamicQRIS(baseQR, rawAmount);
+            qrisImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(dynamicQR)}`;
+          }
 
           if (data.order.status === 'PAID') {
             window.location.href = `/lacak?order_id=${orderId}${pinParam ? '&pin=' + pinParam : ''}`;
