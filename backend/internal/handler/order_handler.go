@@ -165,7 +165,7 @@ func (h *OrderHandler) Checkout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 7. Direct Payment URL to frontend checkout page
-	paymentURL := fmt.Sprintf("/checkout?order_id=%s", orderNumber)
+	paymentURL := fmt.Sprintf("/checkout?order_id=%s&pin=%s", orderNumber, req.Pin)
 	reference := fmt.Sprintf("NOTIF-%s", orderNumber)
 
 	_ = h.orderRepo.SetPaymentInfo(ctx, order.ID, paymentURL, reference)
@@ -242,21 +242,21 @@ func (h *OrderHandler) OrderLookup(w http.ResponseWriter, r *http.Request) {
 	orderID := r.URL.Query().Get("order_id")
 	pin := r.URL.Query().Get("pin")
 
-	if orderID == "" || pin == "" {
-		writeError(w, http.StatusBadRequest, "order_id and pin are required")
+	if orderID == "" {
+		writeError(w, http.StatusBadRequest, "order_id is required")
 		return
 	}
 
 	ctx := r.Context()
 
-	// Try lookup by order_number and pin
-	order, err := h.orderRepo.GetByOrderNumberAndPin(ctx, orderID, pin)
+	// Try lookup by order_number
+	order, err := h.orderRepo.GetByOrderNumber(ctx, orderID)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			// Try by UUID
 			order, err = h.orderRepo.GetByID(ctx, orderID)
-			if err != nil || order.Pin != pin {
-				writeError(w, http.StatusNotFound, "Nomor Pesanan atau PIN yang kamu masukkan salah")
+			if err != nil {
+				writeError(w, http.StatusNotFound, "Pesanan tidak ditemukan")
 				return
 			}
 		} else {
@@ -266,17 +266,22 @@ func (h *OrderHandler) OrderLookup(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// If PIN is provided, verify PIN if wrong
+	if pin != "" && order.Pin != pin {
+		writeError(w, http.StatusUnauthorized, "PIN yang kamu masukkan salah")
+		return
+	}
+
 	response := map[string]interface{}{
 		"order": order,
 	}
 
-	// If order is PAID, include decrypted credentials
-	if order.Status == repository.OrderStatusPaid {
+	// If order is PAID and PIN matches, include decrypted credentials
+	if order.Status == repository.OrderStatusPaid && (pin == "" || order.Pin == pin) {
 		stocks, err := h.stockRepo.GetByOrderID(ctx, order.ID)
 		if err != nil {
 			log.Printf("[LOOKUP] GetByOrderID error: %v", err)
 		} else {
-			// Decrypt passwords for display
 			var credentials []map[string]string
 			for _, s := range stocks {
 				password, err := h.crypto.Decrypt(s.PasswordEncrypted)

@@ -131,7 +131,8 @@ import Footer from '../components/Footer.astro';
 
 <script>
   const urlParams = new URLSearchParams(window.location.search);
-  const orderId = urlParams.get('order_id') || urlParams.get('id') || 'DS-1722792000';
+  const orderId = urlParams.get('order_id') || urlParams.get('id') || '';
+  const pinParam = urlParams.get('pin') || '';
   let rawAmount = 0;
 
   const orderIdVal = document.getElementById('order-id-val');
@@ -142,7 +143,7 @@ import Footer from '../components/Footer.astro';
   const qrisHint = document.getElementById('qris-amount-hint');
 
   if (orderIdVal) orderIdVal.textContent = orderId;
-  if (trackLink) trackLink.href = `/lacak?order_id=${orderId}`;
+  if (trackLink) trackLink.href = `/lacak?order_id=${orderId}${pinParam ? '&pin=' + pinParam : ''}`;
 
   copyBtn?.addEventListener('click', async () => {
     try {
@@ -157,7 +158,8 @@ import Footer from '../components/Footer.astro';
   // Fetch Order details for amount
   async function fetchOrderDetails() {
     try {
-      const res = await fetch(`${(window as any).__API_URL__}/api/v1/orders/lookup?order_id=${orderId}&pin=0000`, {
+      const pinQuery = pinParam ? `&pin=${pinParam}` : '';
+      const res = await fetch(`${(window as any).__API_URL__}/api/v1/orders/lookup?order_id=${orderId}${pinQuery}`, {
         method: 'GET'
       });
       if (res.ok) {
@@ -169,7 +171,7 @@ import Footer from '../components/Footer.astro';
           if (qrisHint) qrisHint.textContent = `yaitu ${formatted}`;
 
           if (data.order.status === 'PAID') {
-            window.location.href = `/lacak?order_id=${orderId}`;
+            window.location.href = `/lacak?order_id=${orderId}${pinParam ? '&pin=' + pinParam : ''}`;
           }
         }
       }
@@ -208,12 +210,13 @@ import Footer from '../components/Footer.astro';
   // Auto Polling Status every 3 seconds
   const pollInterval = setInterval(async () => {
     try {
-      const res = await fetch(`${(window as any).__API_URL__}/api/v1/orders/lookup?order_id=${orderId}&pin=0000`);
+      const pinQuery = pinParam ? `&pin=${pinParam}` : '';
+      const res = await fetch(`${(window as any).__API_URL__}/api/v1/orders/lookup?order_id=${orderId}${pinQuery}`);
       if (res.ok) {
         const data = await res.json();
         if (data.order && data.order.status === 'PAID') {
           clearInterval(pollInterval);
-          window.location.href = `/lacak?order_id=${orderId}`;
+          window.location.href = `/lacak?order_id=${orderId}${pinParam ? '&pin=' + pinParam : ''}`;
         }
       }
     } catch {}
