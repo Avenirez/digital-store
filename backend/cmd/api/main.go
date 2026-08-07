@@ -117,7 +117,6 @@ func main() {
 		// Order endpoints (rate-limited: 10 percobaan / 30 menit)
 		r.With(lookupRateLimiter.Middleware).Get("/orders/lookup", orderHandler.OrderLookup)
 		r.With(lookupRateLimiter.Middleware).Get("/orders/download", orderHandler.DownloadCredentials)
-		r.Post("/orders/simulate-pay", orderHandler.SimulatePay)
 
 		// Webhook endpoints (Duitku callback & App Listener — no rate limit, no CORS)
 		r.Post("/webhooks/duitku", webhookHandler.DuitkuCallback)
@@ -130,6 +129,7 @@ func main() {
 		r.Route("/admin", func(r chi.Router) {
 			r.Use(middleware.AdminAuth(cfg.AdminAPIKey))
 			r.Post("/stocks/bulk", adminHandler.BulkImport)
+			r.Post("/orders/simulate-pay", orderHandler.SimulatePay)
 		})
 	}
 

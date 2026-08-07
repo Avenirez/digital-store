@@ -56,7 +56,7 @@ Proyek e-commerce produk digital (Email + Password) berkinerja tinggi yang diban
 9. **Redis Rate Limiting**:
    - Membatasi percobaan checkout maksimal 3 request per 10 menit per IP.
 10. **Background Auto-Expire Worker**:
-    - Pekerja Go ticker setiap 1 menit yang secara otomatis mengubah status pesanan `PENDING` > 15 menit menjadi `EXPIRED` dan mengembalikan stok tereservasi kembali ke `AVAILABLE`.
+    - Pekerja Go ticker setiap 1 menit yang secara otomatis mengubah status pesanan `PENDING` > 10 menit menjadi `EXPIRED` dan mengembalikan stok tereservasi kembali ke `AVAILABLE`.
 
 ---
 
