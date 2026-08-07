@@ -152,9 +152,8 @@ func (h *AdminHandler) triggerRestockAlerts(productID, productTitle, productSlug
 	}
 
 	ctx := context.Background()
-	_ = ctx
 
-	subs, err := h.restockRepo.GetPendingByProduct(nil, productID)
+	subs, err := h.restockRepo.GetPendingByProduct(ctx, productID)
 	if err != nil {
 		log.Printf("[RESTOCK] Failed to fetch subscribers: %v", err)
 		return
@@ -179,7 +178,7 @@ func (h *AdminHandler) triggerRestockAlerts(productID, productTitle, productSlug
 	}
 
 	if len(notifiedIDs) > 0 {
-		if err := h.restockRepo.MarkNotified(nil, notifiedIDs); err != nil {
+		if err := h.restockRepo.MarkNotified(ctx, notifiedIDs); err != nil {
 			log.Printf("[RESTOCK] Failed to mark notified: %v", err)
 		}
 		log.Printf("[RESTOCK] %d subscribers notified for %s", len(notifiedIDs), productTitle)

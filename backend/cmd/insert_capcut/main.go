@@ -2,40 +2,19 @@ package main
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"log"
 	"os"
 
-	"my-digital-store/backend/internal/service"
-
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
-
-type Account struct {
-	Email    string
-	Password string
-}
 
 func main() {
 	_ = godotenv.Load("../../.env")
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
 		dbURL = "postgres://postgres:password@localhost:5432/digitalstore?sslmode=disable"
-	}
-	aesKeyHex := os.Getenv("AES_KEY")
-	if aesKeyHex == "" {
-		aesKeyHex = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-	}
-	aesKey, err := hex.DecodeString(aesKeyHex)
-	if err != nil {
-		log.Fatalf("Invalid AES_KEY hex: %v", err)
-	}
-
-	cryptoSvc, err := service.NewCryptoService(aesKey)
-	if err != nil {
-		log.Fatalf("Failed to init crypto service: %v", err)
 	}
 
 	ctx := context.Background()
@@ -72,43 +51,7 @@ func main() {
 		log.Fatalf("Failed to create/get product %s: %v", productTitle, err)
 	}
 
-	// 3. Clear existing stocks for CapCut to reset to exactly 5 accounts
-	_, _ = pool.Exec(ctx, "DELETE FROM product_stocks WHERE product_id = $1", productID)
-
-	accounts := []Account{
-		{Email: "blackbutterfly564@saovangtiles.site", Password: "masuk123"},
-		{Email: "crazyswan547@submitreports.com", Password: "masuk123"},
-		{Email: "heavymouse584@mailfirefly.com", Password: "masuk123"},
-		{Email: "smallcat555@saovangtiles.site", Password: "masuk123"},
-		{Email: "beautifullion284@phuongnhicare.com", Password: "masuk123"},
-	}
-
-	insertedCount := 0
-	for _, acc := range accounts {
-		encryptedPass, err := cryptoSvc.Encrypt(acc.Password)
-		if err != nil {
-			log.Printf("Error encrypting password for %s: %v", acc.Email, err)
-			continue
-		}
-
-		_, err = pool.Exec(ctx, `
-			INSERT INTO product_stocks (product_id, email, password_encrypted, status)
-			VALUES ($1, $2, $3, 'AVAILABLE')
-		`, productID, acc.Email, encryptedPass)
-
-		if err != nil {
-			log.Printf("Error inserting stock %s: %v", acc.Email, err)
-		} else {
-			insertedCount++
-			fmt.Printf("✓ Berhasil memasukkan stok: %s\n", acc.Email)
-		}
-	}
-
-	var totalStock int
-	_ = pool.QueryRow(ctx, "SELECT COUNT(*) FROM product_stocks WHERE product_id = $1 AND status = 'AVAILABLE'", productID).Scan(&totalStock)
-
-	fmt.Println("\n==========================================")
-	fmt.Printf("Produk: %s\n", productTitle)
-	fmt.Printf("Total Stok Akun Capcut Tersedia di DB: %d akun\n", totalStock)
-	fmt.Println("==========================================")
+	// Hardcoded credentials have been removed for security.
+	// Use POST /api/v1/admin/stocks/bulk to import product stocks securely.
+	fmt.Println("Gunakan endpoint admin /api/v1/admin/stocks/bulk untuk menambahkan stok produk secara aman.")
 }

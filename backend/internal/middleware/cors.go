@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"crypto/subtle"
 	"net/http"
 	"strings"
 )
@@ -50,7 +51,7 @@ func AdminAuth(apiKey string) func(http.Handler) http.Handler {
 			}
 
 			provided := r.Header.Get("X-Admin-Key")
-			if provided == "" || provided != apiKey {
+			if provided == "" || subtle.ConstantTimeCompare([]byte(provided), []byte(apiKey)) != 1 {
 				http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
 				return
 			}

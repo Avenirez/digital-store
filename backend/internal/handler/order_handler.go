@@ -330,7 +330,7 @@ func (h *OrderHandler) OrderLookup(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// If PIN is provided, verify PIN if wrong
+	// If PIN is provided and incorrect, return unauthorized
 	if pin != "" && order.Pin != pin {
 		writeError(w, http.StatusUnauthorized, "PIN yang kamu masukkan salah")
 		return
@@ -340,8 +340,8 @@ func (h *OrderHandler) OrderLookup(w http.ResponseWriter, r *http.Request) {
 		"order": order,
 	}
 
-	// If order is PAID and PIN matches, include decrypted credentials
-	if order.Status == repository.OrderStatusPaid && (pin == "" || order.Pin == pin) {
+	// If order is PAID and valid PIN is provided, include decrypted credentials
+	if order.Status == repository.OrderStatusPaid && pin != "" && order.Pin == pin {
 		stocks, err := h.stockRepo.GetByOrderID(ctx, order.ID)
 		if err != nil {
 			log.Printf("[LOOKUP] GetByOrderID error: %v", err)

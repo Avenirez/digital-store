@@ -2,8 +2,8 @@ package middleware
 
 import (
 	"fmt"
+	"net"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -32,13 +32,10 @@ func (rl *RateLimiter) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		// Extract client IP (Chi's RealIP middleware sets this)
+		// Extract client IP (normalized by Chi's RealIP middleware)
 		ip := r.RemoteAddr
-		if forwarded := r.Header.Get("X-Forwarded-For"); forwarded != "" {
-			ip = strings.Split(forwarded, ",")[0]
-		}
-		if realIP := r.Header.Get("X-Real-Ip"); realIP != "" {
-			ip = realIP
+		if host, _, err := net.SplitHostPort(ip); err == nil {
+			ip = host
 		}
 
 		key := fmt.Sprintf("%s:%s", rl.prefix, ip)

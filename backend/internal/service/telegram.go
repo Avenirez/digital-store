@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"html"
 	"io"
 	"log"
 	"net/http"
@@ -122,7 +123,12 @@ func (t *TelegramService) AlertNewOrder(orderNumber, customerName, productTitle 
 			"🔢 <b>Jumlah Pembelian:</b> %d Pcs\n"+
 			"💵 <b>Total Nominal:</b> Rp %s\n"+
 			"🔑 <b>PIN Keamanan:</b> <code>%s</code>",
-		orderNumber, customerName, productTitle, quantity, formatIDR(amount), pin,
+		html.EscapeString(orderNumber),
+		html.EscapeString(customerName),
+		html.EscapeString(productTitle),
+		quantity,
+		formatIDR(amount),
+		html.EscapeString(pin),
 	)
 	t.SendAlert(msg)
 }
@@ -134,7 +140,7 @@ func (t *TelegramService) AlertLowStock(productTitle string, remaining int) {
 			"🏷️ Product: %s\n"+
 			"📊 Remaining: <b>%d</b> items\n\n"+
 			"Please restock soon!",
-		productTitle, remaining,
+		html.EscapeString(productTitle), remaining,
 	)
 	t.SendAlert(msg)
 }
