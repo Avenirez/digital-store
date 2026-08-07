@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"log"
 	"os"
@@ -28,12 +29,16 @@ func main() {
 	if dbURL == "" {
 		dbURL = "postgres://postgres:password@localhost:5432/digitalstore?sslmode=disable"
 	}
-	aesKey := os.Getenv("AES_KEY")
-	if aesKey == "" {
-		aesKey = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+	aesKeyHex := os.Getenv("AES_KEY")
+	if aesKeyHex == "" {
+		aesKeyHex = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+	}
+	aesKey, err := hex.DecodeString(aesKeyHex)
+	if err != nil {
+		log.Fatalf("Invalid AES_KEY hex: %v", err)
 	}
 
-	cryptoSvc, err := service.NewCryptoService([]byte(aesKey[:32]))
+	cryptoSvc, err := service.NewCryptoService(aesKey)
 	if err != nil {
 		log.Fatalf("Failed to init crypto: %v", err)
 	}
