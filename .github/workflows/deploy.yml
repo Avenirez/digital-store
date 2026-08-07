@@ -23,3 +23,5 @@ jobs:
             cd /var/www/digital-store
             git pull origin main
             docker compose up -d --build
+            docker compose restart nginx
+            echo "Deploy complete at $(date)"

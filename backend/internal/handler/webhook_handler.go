@@ -194,20 +194,31 @@ func (h *WebhookHandler) NotificationListener(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	// Extract amount from text (e.g. "Berhasil menerima transfer Rp 15.347" or "Rp15.347")
-	re := regexp.MustCompile(`Rp\s?([0-9\.\,]+)`)
+	// Extract amount from text (e.g. "Rp 50.187", "Rp.50.187", "IDR 50.187", "sebesar 50187", "Rp50.187,00")
+	re := regexp.MustCompile(`(?:Rp\.?|IDR|sebesar)\s?([0-9\.\,]+)`)
 	matches := re.FindStringSubmatch(fullContent)
 	if len(matches) < 2 {
-		log.Printf("[NOTIFICATION-LISTENER] No Rp amount pattern found in notification text")
+		// Fallback regex to capture any formatted number with dots like 50.187
+		reFallback := regexp.MustCompile(`\b([0-9]{1,3}(?:\.[0-9]{3})+)\b`)
+		matches = reFallback.FindStringSubmatch(fullContent)
+	}
+
+	if len(matches) < 2 {
+		log.Printf("[NOTIFICATION-LISTENER] No Rp or amount pattern found in notification text")
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"status":"ignored","reason":"No Rp amount found"}`))
+		w.Write([]byte(`{"status":"ignored","reason":"No valid amount found"}`))
 		return
 	}
 
 	rawAmountStr := matches[1]
-	// Clean formatting (dots and commas to pure number)
-	cleanedAmount := strings.ReplaceAll(strings.ReplaceAll(rawAmountStr, ".", ""), ",", ".")
+	// Handle case where string ends with trailing decimal cents like ,00
+	if strings.HasSuffix(rawAmountStr, ",00") {
+		rawAmountStr = strings.TrimSuffix(rawAmountStr, ",00")
+	}
+	// Clean formatting (dots to empty, remaining comma to dot)
+	cleanedAmount := strings.ReplaceAll(rawAmountStr, ".", "")
+	cleanedAmount = strings.ReplaceAll(cleanedAmount, ",", ".")
 	paidAmount, err := strconv.ParseFloat(cleanedAmount, 64)
 	if err != nil {
 		log.Printf("[NOTIFICATION-LISTENER] Failed to parse float amount %s: %v", cleanedAmount, err)

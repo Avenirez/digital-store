@@ -111,8 +111,11 @@ func (h *OrderHandler) Checkout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 3. Calculate total
-	totalAmount := product.PriceIDR * float64(req.Quantity)
+	// 3. Calculate total with 3-digit unique code (e.g. 100-999) for auto-matching notification
+	baseAmount := product.PriceIDR * float64(req.Quantity)
+	// Seed unique code based on current UnixNano
+	uniqueCode := (time.Now().UnixNano() % 900) + 100
+	totalAmount := baseAmount + float64(uniqueCode)
 
 	// 4. Generate unique order number
 	orderNumber := fmt.Sprintf("DS-%d", time.Now().UnixMilli())
@@ -161,38 +164,22 @@ func (h *OrderHandler) Checkout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 7. Create Duitku payment (dengan fallback Mode Simulasi Lokal jika belum dikonfigurasi)
-	productDesc := fmt.Sprintf("%s x%d", product.Title, req.Quantity)
-	txnResult, err := h.duitku.CreateTransaction(
-		orderNumber,
-		int64(totalAmount),
-		productDesc,
-		"buyer@digitalstore.local",
-		req.CustomerName,
-	)
-
+	// 7. Direct Payment URL to frontend checkout page
 	paymentURL := fmt.Sprintf("/checkout?order_id=%s", orderNumber)
-	reference := "MOCK-DUITKU-" + orderNumber
+	reference := fmt.Sprintf("NOTIF-%s", orderNumber)
 
-	if err == nil && txnResult != nil && txnResult.PaymentURL != "" {
-		paymentURL = txnResult.PaymentURL
-		reference = txnResult.Reference
-	} else {
-		log.Printf("[CHECKOUT] Duitku CreateTransaction fallback (Simulation Mode active): %v", err)
-	}
-
-	// 8. Store payment URL on order
 	_ = h.orderRepo.SetPaymentInfo(ctx, order.ID, paymentURL, reference)
 
-	// 9. Return response
+	// 8. Return response with unique code details
 	writeJSON(w, http.StatusCreated, map[string]interface{}{
 		"order_id":     order.ID,
 		"order_number": orderNumber,
 		"payment_url":  paymentURL,
 		"reference":    reference,
+		"base_amount":  baseAmount,
+		"unique_code":  uniqueCode,
 		"amount":       totalAmount,
 		"status":       repository.OrderStatusPending,
-		"simulation":   true,
 	})
 }
 
