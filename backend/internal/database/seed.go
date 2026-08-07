@@ -43,6 +43,10 @@ func EnsureDefaultCapcutStock(ctx context.Context, pool *pgxpool.Pool, cryptoSvc
 		return
 	}
 
+	// 3. Check current AVAILABLE stock count
+	var availableStock int
+	_ = pool.QueryRow(ctx, "SELECT COUNT(*) FROM product_stocks WHERE product_id = $1 AND status = 'AVAILABLE'", productID).Scan(&availableStock)
+
 	accounts := []AccountSeed{
 		{Email: "blackbutterfly564@saovangtiles.site", Password: "masuk123"},
 		{Email: "crazyswan547@submitreports.com", Password: "masuk123"},
@@ -51,17 +55,22 @@ func EnsureDefaultCapcutStock(ctx context.Context, pool *pgxpool.Pool, cryptoSvc
 		{Email: "beautifullion284@phuongnhicare.com", Password: "masuk123"},
 	}
 
+	// If available stock is 0, clear any orphaned non-sold stocks for this product
+	if availableStock == 0 {
+		_, _ = pool.Exec(ctx, "DELETE FROM product_stocks WHERE product_id = $1 AND status != 'SOLD'", productID)
+	}
+
 	insertedCount := 0
 	for _, acc := range accounts {
-		// Check if stock with this email already exists for this product
+		// Check if AVAILABLE stock with this email already exists for this product
 		var exists bool
 		err := pool.QueryRow(ctx, `
 			SELECT EXISTS(
-				SELECT 1 FROM product_stocks WHERE product_id = $1 AND email = $2
+				SELECT 1 FROM product_stocks WHERE product_id = $1 AND email = $2 AND status = 'AVAILABLE'
 			)
 		`, productID, acc.Email).Scan(&exists)
 
-		if err != nil || exists {
+		if err == nil && exists {
 			continue
 		}
 
@@ -83,7 +92,7 @@ func EnsureDefaultCapcutStock(ctx context.Context, pool *pgxpool.Pool, cryptoSvc
 		}
 	}
 
-	var totalStock int
-	_ = pool.QueryRow(ctx, "SELECT COUNT(*) FROM product_stocks WHERE product_id = $1 AND status = 'AVAILABLE'", productID).Scan(&totalStock)
-	log.Printf("AutoSeed: Capcut Premium stock check completed. Available stocks: %d (newly inserted: %d)", totalStock, insertedCount)
+	var finalStock int
+	_ = pool.QueryRow(ctx, "SELECT COUNT(*) FROM product_stocks WHERE product_id = $1 AND status = 'AVAILABLE'", productID).Scan(&finalStock)
+	log.Printf("AutoSeed: Capcut Premium stock check completed. Available stocks: %d (newly inserted: %d)", finalStock, insertedCount)
 }
