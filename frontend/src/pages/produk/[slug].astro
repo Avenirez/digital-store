@@ -2,7 +2,6 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
-import RestockForm from '../../components/RestockForm.astro';
 
 const { slug } = Astro.params;
 const API_URL = import.meta.env.PUBLIC_API_URL || '';
@@ -301,11 +300,6 @@ export async function getStaticPaths() {
                 </div>
               </div>
 
-              <!-- Restock Form Section -->
-              <div id="restock-section" class={isInStock ? 'hidden' : ''}>
-                <RestockForm productSlug={product.slug} />
-              </div>
-
               <!-- Payment info -->
               <div class="mt-6 pt-5 border-t border-[#e5d4c5] dark:border-[#3d2d22]">
                 <p class="text-xs text-[#87533d] dark:text-[#b8856c] text-center font-bold">
@@ -415,16 +409,13 @@ export async function getStaticPaths() {
           stockDot.className = `w-2.5 h-2.5 rounded-full ${isInStock ? 'bg-emerald-600 animate-pulse-soft' : 'bg-rose-600'}`;
         }
 
-        // Toggle checkout vs restock forms dynamically
+        // Toggle checkout section visibility dynamically
         const checkoutSection = document.getElementById('checkout-section');
-        const restockSection = document.getElementById('restock-section');
-        if (checkoutSection && restockSection) {
+        if (checkoutSection) {
           if (isInStock) {
             checkoutSection.classList.remove('hidden');
-            restockSection.classList.add('hidden');
           } else {
             checkoutSection.classList.add('hidden');
-            restockSection.classList.remove('hidden');
           }
         }
 
