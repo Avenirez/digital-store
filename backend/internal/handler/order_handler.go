@@ -78,15 +78,17 @@ func (h *OrderHandler) Checkout(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "product_slug and pin are required")
 		return
 	}
+	if strings.TrimSpace(req.CustomerName) == "" {
+		writeError(w, http.StatusBadRequest, "Nama pembeli wajib diisi")
+		return
+	}
+	req.CustomerName = strings.TrimSpace(req.CustomerName)
 	if len(req.Pin) < 4 || len(req.Pin) > 10 {
 		writeError(w, http.StatusBadRequest, "PIN must be between 4 and 10 digits")
 		return
 	}
 	if req.Quantity <= 0 {
 		req.Quantity = 1
-	}
-	if req.CustomerName == "" {
-		req.CustomerName = "Pembeli"
 	}
 
 	ctx := r.Context()
@@ -115,25 +117,77 @@ func (h *OrderHandler) Checkout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 3. Calculate total with sequential 3-digit unique code (starts at 100, increments 101, 102, 103...)
+	// 3. Time zone setup (WIB UTC+7) for daily reset logic
+	loc := time.FixedZone("WIB", 7*3600)
+	nowWIB := time.Now().In(loc)
+	dateStr := nowWIB.Format("20060102")
+
+	// Calculate total with sequential unique code (starts at 100, resets at 200 & resets daily at 00:00 WIB)
 	baseAmount := product.PriceIDR * float64(req.Quantity)
-	var uniqueCode int64 = 100
+	var startCode int64 = 100
+
 	if h.redisClient != nil {
-		val, err := h.redisClient.Incr(ctx, "order:unique_code_seq").Result()
+		redisKey := fmt.Sprintf("order:unique_code_seq:%s", dateStr)
+		val, err := h.redisClient.Incr(ctx, redisKey).Result()
 		if err == nil {
-			if val < 100 || val > 999 {
-				_ = h.redisClient.Set(ctx, "order:unique_code_seq", 100, 0).Err()
-				val = 100
+			if val == 1 {
+				_ = h.redisClient.Expire(ctx, redisKey, 48*time.Hour).Err()
 			}
-			uniqueCode = val
+			startCode = 100 + ((val - 1) % 101)
 		}
 	} else {
-		uniqueCode = (time.Now().UnixNano() % 900) + 100
+		startCode = 100
 	}
-	totalAmount := baseAmount + float64(uniqueCode)
 
-	// 4. Generate unique order number
-	orderNumber := fmt.Sprintf("DS-%d", time.Now().UnixMilli())
+	// Prevent collision with any existing PENDING order with the exact same total amount
+	var uniqueCode int64 = startCode
+	var totalAmount float64
+	for attempt := 0; attempt < 101; attempt++ {
+		candidateTotal := baseAmount + float64(uniqueCode)
+		var pendingCount int
+		err := h.db.QueryRow(ctx, `SELECT COUNT(*) FROM orders WHERE total_amount = $1 AND status = 'PENDING'`, candidateTotal).Scan(&pendingCount)
+		if err == nil && pendingCount == 0 {
+			totalAmount = candidateTotal
+			break
+		}
+		uniqueCode++
+		if uniqueCode > 200 {
+			uniqueCode = 100
+		}
+	}
+	if totalAmount == 0 {
+		totalAmount = baseAmount + float64(uniqueCode)
+	}
+
+	// 4. Generate unique order number with ID- prefix and 001-100 daily reset logic (WIB UTC+7)
+	datePrefix := fmt.Sprintf("ID-%s-", dateStr)
+
+	var seqNum int
+	if h.redisClient != nil {
+		redisKey := fmt.Sprintf("order:daily_seq:%s", dateStr)
+		val, err := h.redisClient.Incr(ctx, redisKey).Result()
+		if err == nil {
+			if val == 1 {
+				_ = h.redisClient.Expire(ctx, redisKey, 48*time.Hour).Err()
+			}
+			if val > 100 {
+				seqNum = int(((val - 1) % 100) + 1)
+			} else {
+				seqNum = int(val)
+			}
+		}
+	}
+
+	if seqNum <= 0 {
+		var err error
+		seqNum, err = h.orderRepo.GetNextDailySeq(ctx, datePrefix)
+		if err != nil {
+			log.Printf("[CHECKOUT] GetNextDailySeq error: %v", err)
+			seqNum = 1
+		}
+	}
+
+	orderNumber := fmt.Sprintf("%s%03d", datePrefix, seqNum)
 
 	// 5. Create order in DB
 	order := &repository.Order{

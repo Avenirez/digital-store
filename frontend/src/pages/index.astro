@@ -139,7 +139,7 @@ try {
         const cardsHtml = prods.map((p, i) => {
           const priceFormatted = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(p.price_idr);
           const isInStock = p.stock_count > 0;
-          const stockLabel = isInStock ? `${p.stock_count} tersedia` : 'Stok habis';
+          const stockLabel = isInStock ? `${p.stock_count} akun tersedia` : 'Stok habis';
           const stockDot = p.stock_count > 5 ? 'bg-emerald-600' : p.stock_count > 0 ? 'bg-amber-600' : 'bg-rose-600';
           const imgContent = p.image_url 
             ? `<img src="${p.image_url}" alt="${p.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />`

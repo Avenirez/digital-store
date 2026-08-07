@@ -210,3 +210,27 @@ func (r *OrderRepo) ExpirePendingOrders(ctx context.Context, threshold time.Dura
 
 	return expiredIDs, rows.Err()
 }
+
+// GetNextDailySeq returns the next 1-based sequence number (001-100) for orders on datePrefix (e.g. "ID-20260807-").
+func (r *OrderRepo) GetNextDailySeq(ctx context.Context, datePrefix string) (int, error) {
+	query := `
+		SELECT COALESCE(MAX(
+			CASE 
+				WHEN order_number ~ '-[0-9]{3}$' 
+				THEN CAST(RIGHT(order_number, 3) AS INTEGER)
+				ELSE 0 
+			END
+		), 0) + 1
+		FROM orders
+		WHERE order_number LIKE $1
+	`
+	var nextSeq int
+	err := r.db.QueryRow(ctx, query, datePrefix+"%").Scan(&nextSeq)
+	if err != nil {
+		return 1, err
+	}
+	if nextSeq > 100 {
+		nextSeq = ((nextSeq - 1) % 100) + 1
+	}
+	return nextSeq, nil
+}
