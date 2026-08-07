@@ -49,7 +49,7 @@ func main() {
 	productTitle := "Capcut Premium (7 Hari)"
 	productSlug := "capcut-premium-7-days"
 	productDesc := "Akun Capcut Premium 7 Hari privat, akses penuh semua fitur efek & template pro."
-	priceIDR := 10000.00
+	priceIDR := 1000.00
 	imageURL := "/images/capcut.webp"
 
 	err = pool.QueryRow(ctx, `

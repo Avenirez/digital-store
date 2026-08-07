@@ -54,7 +54,7 @@ func main() {
 			Title:       "Capcut Premium (7 Hari)",
 			Slug:        "capcut-premium-7-days",
 			Description: "Akun Capcut Premium 7 Hari privat, akses penuh semua fitur efek & template pro.",
-			PriceIDR:    10000,
+			PriceIDR:    1000,
 			ImageURL:    "/images/capcut.webp",
 			Stocks: []string{
 				"blackbutterfly564@saovangtiles.site:masuk123",
