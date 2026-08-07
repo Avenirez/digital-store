@@ -334,13 +334,11 @@ export async function getStaticPaths() {
   const qtyPlus = document.getElementById('qty-plus');
   const priceDisplay = document.getElementById('btn-price-display');
 
-  const unitPrice = parseFloat(form?.dataset.unitPrice || '0');
-  const maxStock = parseInt(form?.dataset.maxStock || '5', 10);
-
   function updatePrice() {
     if (!qtyInput) return;
+    const currentPrice = parseFloat(form?.dataset.unitPrice || '0');
     const qty = parseInt(qtyInput.value, 10) || 1;
-    const totalPrice = unitPrice * qty;
+    const totalPrice = currentPrice * qty;
     const formatted = new Intl.NumberFormat('id-ID', {
       style: 'currency',
       currency: 'IDR',
@@ -361,10 +359,22 @@ export async function getStaticPaths() {
   qtyPlus?.addEventListener('click', () => {
     if (!qtyInput) return;
     let current = parseInt(qtyInput.value, 10) || 1;
-    if (current < maxStock) {
+    const currentMaxStock = parseInt(form?.dataset.maxStock || '1', 10);
+    if (current < currentMaxStock) {
       qtyInput.value = (current + 1).toString();
       updatePrice();
     }
+  });
+
+  qtyInput?.addEventListener('change', () => {
+    let current = parseInt(qtyInput.value, 10) || 1;
+    const currentMaxStock = parseInt(form?.dataset.maxStock || '1', 10);
+    if (current > currentMaxStock) {
+      qtyInput.value = currentMaxStock.toString();
+    } else if (current < 1) {
+      qtyInput.value = '1';
+    }
+    updatePrice();
   });
 
   // Load live product data on client
@@ -510,6 +520,13 @@ export async function getStaticPaths() {
 
     if (!customerName) {
       if (errorText) errorText.textContent = '❌ Nama pembeli wajib diisi.';
+      if (errorEl) errorEl.classList.remove('hidden');
+      return;
+    }
+
+    const currentMaxStock = parseInt(form?.dataset.maxStock || '1', 10);
+    if (qty > currentMaxStock) {
+      if (errorText) errorText.textContent = `❌ Jumlah pembelian (${qty} Pcs) melebihi stok yang tersedia (Maks ${currentMaxStock} Pcs).`;
       if (errorEl) errorEl.classList.remove('hidden');
       return;
     }
