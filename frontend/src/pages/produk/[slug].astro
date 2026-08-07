@@ -450,7 +450,9 @@ export async function getStaticPaths() {
   }
 
   document.addEventListener('DOMContentLoaded', loadLiveProductData);
+  window.addEventListener('focus', loadLiveProductData);
   loadLiveProductData();
+  setInterval(loadLiveProductData, 10000);
 
   // Rate Limiting untuk Konfirmasi PIN Salah (10x per 30 menit)
   const MAX_MISMATCH = 10;

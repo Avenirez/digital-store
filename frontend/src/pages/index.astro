@@ -176,7 +176,9 @@ try {
     }
 
     document.addEventListener('DOMContentLoaded', loadProductsClient);
+    window.addEventListener('focus', loadProductsClient);
     loadProductsClient();
+    setInterval(loadProductsClient, 10000);
   </script>
 
   <!-- How it works -->
