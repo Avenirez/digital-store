@@ -1,0 +1,329 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<BaseLayout title="Pesanan Lunas — Lexaa Store" description="Halaman akses dan pengambilan kredensial akun digital untuk pesanan yang sudah lunas.">
+  <Header slot="header" />
+
+  <div class="max-w-2xl mx-auto px-4 sm:px-6 py-12">
+    <!-- Header Title -->
+    <div class="text-center mb-10 animate-fade-in">
+      <div class="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto mb-4 border border-emerald-200 dark:border-emerald-800 shadow-sm">
+        <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+
+      <h1 class="text-2xl sm:text-3xl font-extrabold text-[#87533d] dark:text-[#faf0e6] mb-3">Pesanan Lunas & Ambil Akun</h1>
+      <p class="text-[#9e644c] dark:text-[#e5d4c5] text-sm font-medium">
+        Masukkan Nomor Pesanan dan PIN Keamanan Anda untuk mengambil detail akun digital yang sudah Anda beli.
+      </p>
+    </div>
+
+    <!-- Lookup Form Card -->
+    <div class="p-6 rounded-2xl bg-[#ffffff]/90 dark:bg-[#1c1510]/95 border border-[#e5d4c5] dark:border-[#3d2d22] mb-8 animate-slide-up shadow-sm">
+      <form id="paid-order-form" class="space-y-4">
+        <div>
+          <label for="order_id" class="block text-xs font-black text-[#2b1f17] dark:text-[#faf0e6] mb-1.5">Nomor Pesanan</label>
+          <input
+            type="text"
+            id="order_id"
+            name="order_id"
+            required
+            placeholder="Contoh: DS-1786088289727"
+            class="w-full px-3.5 py-2.5 rounded-lg bg-[#faf0e6] dark:bg-[#2b1f17] border border-[#e5d4c5] dark:border-[#3d2d22] text-sm text-[#4d3a2c] dark:text-[#faf0e6] placeholder:text-[#9e644c]/70 dark:placeholder:text-[#b8856c]/60 focus:outline-none focus:border-[#87533d] focus:ring-1 focus:ring-[#87533d]/30 transition-all font-bold"
+          />
+        </div>
+        <div>
+          <label for="pin" class="block text-xs font-black text-[#2b1f17] dark:text-[#faf0e6] mb-1.5">PIN Keamanan</label>
+          <input
+            type="password"
+            id="pin"
+            name="pin"
+            required
+            maxlength="6"
+            pattern="[0-9]{6}"
+            inputmode="numeric"
+            placeholder="Contoh: 123456"
+            class="w-full px-3.5 py-2.5 rounded-lg bg-[#faf0e6] dark:bg-[#2b1f17] border border-[#e5d4c5] dark:border-[#3d2d22] text-sm text-[#4d3a2c] dark:text-[#faf0e6] placeholder:text-[#9e644c]/70 dark:placeholder:text-[#b8856c]/60 focus:outline-none focus:border-[#87533d] focus:ring-1 focus:ring-[#87533d]/30 transition-all font-bold tracking-widest"
+          />
+        </div>
+        <button
+          type="submit"
+          id="fetch-btn"
+          class="btn-solid w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-700 to-emerald-600 hover:from-emerald-800 hover:to-emerald-700 !text-[#faf0e6] font-extrabold text-sm shadow-lg shadow-emerald-700/20 transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          <span>🔑</span> Ambil Detail Akun Saya
+        </button>
+      </form>
+    </div>
+
+    <!-- Error Alert -->
+    <div id="fetch-error" class="hidden mb-6 p-4 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 animate-fade-in">
+      <p class="text-sm text-rose-700 dark:text-rose-300 font-bold flex items-center gap-2" id="fetch-error-text">
+        <svg class="w-5 h-5 shrink-0 text-rose-600 dark:text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+        </svg>
+        <span></span>
+      </p>
+    </div>
+
+    <!-- Results Section -->
+    <div id="results-container" class="hidden space-y-6 animate-slide-up">
+      <!-- Success Order Summary Card -->
+      <div class="p-6 rounded-2xl bg-[#ffffff]/95 dark:bg-[#1c1510] border border-emerald-300 dark:border-emerald-900/60 shadow-sm relative overflow-hidden">
+        <div class="absolute top-0 right-0 px-4 py-1.5 rounded-bl-xl bg-emerald-600 text-white font-extrabold text-xs flex items-center gap-1 shadow-sm">
+          <span>✅</span> PEMBAYARAN LUNAS
+        </div>
+
+        <h2 class="text-lg font-black text-[#1c1510] dark:text-[#faf0e6] mb-4">Rincian Transaksi</h2>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+          <div class="p-3 rounded-xl bg-[#faf0e6] dark:bg-[#2b1f17] border border-[#e5d4c5] dark:border-[#3d2d22]">
+            <span class="block text-xs font-bold text-[#87533d] dark:text-[#b8856c] uppercase">Nomor Pesanan</span>
+            <span class="font-mono font-black text-[#1c1510] dark:text-[#faf0e6] text-base" id="res-order-number">-</span>
+          </div>
+
+          <div class="p-3 rounded-xl bg-[#faf0e6] dark:bg-[#2b1f17] border border-[#e5d4c5] dark:border-[#3d2d22]">
+            <span class="block text-xs font-bold text-[#87533d] dark:text-[#b8856c] uppercase">Produk Dibeli</span>
+            <span class="font-black text-[#1c1510] dark:text-[#faf0e6]" id="res-product-name">-</span>
+          </div>
+
+          <div class="p-3 rounded-xl bg-[#faf0e6] dark:bg-[#2b1f17] border border-[#e5d4c5] dark:border-[#3d2d22]">
+            <span class="block text-xs font-bold text-[#87533d] dark:text-[#b8856c] uppercase">Jumlah / Qty</span>
+            <span class="font-bold text-[#1c1510] dark:text-[#faf0e6]" id="res-quantity">-</span>
+          </div>
+
+          <div class="p-3 rounded-xl bg-[#faf0e6] dark:bg-[#2b1f17] border border-[#e5d4c5] dark:border-[#3d2d22]">
+            <span class="block text-xs font-bold text-[#87533d] dark:text-[#b8856c] uppercase">Total Ditransfer</span>
+            <span class="font-black text-emerald-700 dark:text-emerald-400 text-base" id="res-total-amount">-</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Account Credentials Section -->
+      <div id="credentials-card" class="p-6 rounded-2xl bg-[#ffffff]/95 dark:bg-[#1c1510] border border-[#e5d4c5] dark:border-[#3d2d22] shadow-md">
+        <div class="flex items-center justify-between mb-5 flex-wrap gap-2">
+          <div>
+            <h2 class="text-lg font-black text-[#1c1510] dark:text-[#faf0e6]">Data Akun Digital Anda</h2>
+            <p class="text-xs text-[#5c4a3b] dark:text-[#c4b1a2] mt-0.5">Gunakan informasi login di bawah ini untuk mengaktifkan akun Anda.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button
+              id="copy-all-btn"
+              class="px-3.5 py-2 rounded-xl bg-[#faf0e6] dark:bg-[#2b1f17] border border-[#e5d4c5] dark:border-[#3d2d22] text-xs font-bold text-[#87533d] dark:text-[#faf0e6] hover:bg-[#e4cdb7] dark:hover:bg-[#38291f] transition-all flex items-center gap-1.5 shadow-sm"
+            >
+              <svg class="w-4 h-4 text-[#87533d] dark:text-[#b8856c]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
+              </svg>
+              <span>Salin Semua</span>
+            </button>
+            <button
+              id="download-btn"
+              class="px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
+            >
+              <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+              </svg>
+              Download .txt
+            </button>
+          </div>
+        </div>
+
+        <div id="credentials-list" class="space-y-4">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <Footer slot="footer" />
+</BaseLayout>
+
+<script>
+  const form = document.getElementById('paid-order-form') as HTMLFormElement;
+  const btn = document.getElementById('fetch-btn') as HTMLButtonElement;
+  const errorEl = document.getElementById('fetch-error');
+  const errorText = document.getElementById('fetch-error-text')?.querySelector('span');
+  const resultsContainer = document.getElementById('results-container');
+  const credentialsList = document.getElementById('credentials-list');
+  const downloadBtn = document.getElementById('download-btn');
+  const copyAllBtn = document.getElementById('copy-all-btn');
+
+  let currentOrderId = '';
+  let currentPin = '';
+  let currentCredentials: any[] = [];
+
+  // Auto-fill from URL params if present
+  const urlParams = new URLSearchParams(window.location.search);
+  const paramOrderId = urlParams.get('order_id') || urlParams.get('id') || '';
+  const paramPin = urlParams.get('pin') || '';
+
+  if (paramOrderId) {
+    const inputOrderId = document.getElementById('order_id') as HTMLInputElement;
+    if (inputOrderId) inputOrderId.value = paramOrderId;
+  }
+  if (paramPin) {
+    const inputPin = document.getElementById('pin') as HTMLInputElement;
+    if (inputPin) inputPin.value = paramPin;
+  }
+
+  if (paramOrderId && paramPin) {
+    fetchPaidOrder(paramOrderId, paramPin);
+  }
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(form);
+    currentOrderId = (formData.get('order_id') as string || '').trim();
+    currentPin = (formData.get('pin') as string || '').trim();
+    fetchPaidOrder(currentOrderId, currentPin);
+  });
+
+  async function fetchPaidOrder(orderId: string, pin: string) {
+    if (!orderId || !pin) return;
+    errorEl?.classList.add('hidden');
+    resultsContainer?.classList.add('hidden');
+    btn.disabled = true;
+    btn.textContent = 'Mencari Data Akun...';
+
+    currentOrderId = orderId;
+    currentPin = pin;
+
+    try {
+      const params = new URLSearchParams({ order_id: orderId, pin: pin });
+      const res = await fetch(`${(window as any).__API_URL__}/api/v1/orders/lookup?${params}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        if (errorText) errorText.textContent = data.error || 'Nomor Pesanan atau PIN yang kamu masukkan salah.';
+        errorEl?.classList.remove('hidden');
+      } else if (data.order?.status !== 'PAID') {
+        if (errorText) errorText.textContent = 'Pesanan ini belum lunas atau masih pending/kedaluwarsa. Silakan periksa di menu Lacak Pesanan.';
+        errorEl?.classList.remove('hidden');
+      } else {
+        renderPaidOrder(data);
+      }
+    } catch {
+      if (errorText) errorText.textContent = 'Koneksi gagal. Periksa jaringan Anda.';
+      errorEl?.classList.remove('hidden');
+    }
+
+    btn.disabled = false;
+    btn.textContent = '🔑 Ambil Detail Akun Saya';
+  }
+
+  function renderPaidOrder(data: any) {
+    const order = data.order;
+    currentCredentials = data.credentials || [];
+
+    const orderNumEl = document.getElementById('res-order-number');
+    const productNameEl = document.getElementById('res-product-name');
+    const quantityEl = document.getElementById('res-quantity');
+    const totalEl = document.getElementById('res-total-amount');
+
+    if (orderNumEl) orderNumEl.textContent = order.order_number;
+    if (productNameEl) productNameEl.textContent = order.product_title || order.product_name || order.product_slug || 'Akun Digital Premium';
+    if (quantityEl) quantityEl.textContent = `${order.quantity || 1} Akun`;
+    if (totalEl) totalEl.textContent = `Rp ${parseInt(order.total_amount).toLocaleString('id-ID')}`;
+
+    if (credentialsList) {
+      credentialsList.innerHTML = '';
+      currentCredentials.forEach((cred: any, i: number) => {
+        const card = document.createElement('div');
+        card.className = 'p-4 rounded-xl bg-[#faf0e6] dark:bg-[#2b1f17] border border-[#e5d4c5] dark:border-[#3d2d22] space-y-3';
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-black text-[#87533d] dark:text-[#b8856c] uppercase tracking-wider">Akun #${i + 1}</span>
+            <span class="text-[11px] font-extrabold px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300">Siap Pakai</span>
+          </div>
+
+          <div class="space-y-2.5">
+            <!-- Email / Username -->
+            <div class="p-3 rounded-lg bg-[#ffffff] dark:bg-[#1c1510] border border-[#e5d4c5] dark:border-[#3d2d22]">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-[11px] font-black text-[#5c4a3b] dark:text-[#b8856c] uppercase">EMAIL / USERNAME</span>
+                <button class="copy-cred px-2 py-1 rounded bg-[#faf0e6] dark:bg-[#2b1f17] hover:bg-[#e4cdb7] dark:hover:bg-[#3d2d22] text-xs font-bold text-[#87533d] dark:text-[#faf0e6] transition-colors" data-value="${cred.email}">
+                  Salin Email
+                </button>
+              </div>
+              <div class="font-mono text-sm font-black text-[#1c1510] dark:text-[#faf0e6] select-all">${cred.email}</div>
+            </div>
+
+            <!-- Password -->
+            <div class="p-3 rounded-lg bg-[#ffffff] dark:bg-[#1c1510] border border-[#e5d4c5] dark:border-[#3d2d22]">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-[11px] font-black text-[#5c4a3b] dark:text-[#b8856c] uppercase">PASSWORD</span>
+                <div class="flex items-center gap-1.5">
+                  <button class="toggle-pw px-2 py-1 rounded bg-[#faf0e6] dark:bg-[#2b1f17] hover:bg-[#e4cdb7] dark:hover:bg-[#3d2d22] text-xs font-bold text-[#5c4a3b] dark:text-[#d3c2b4] transition-colors" data-value="${cred.password}" data-masked="${'•'.repeat(Math.min(cred.password.length, 12))}">
+                    Lihat
+                  </button>
+                  <button class="copy-cred px-2 py-1 rounded bg-[#faf0e6] dark:bg-[#2b1f17] hover:bg-[#e4cdb7] dark:hover:bg-[#3d2d22] text-xs font-bold text-[#87533d] dark:text-[#faf0e6] transition-colors" data-value="${cred.password}">
+                    Salin Password
+                  </button>
+                </div>
+              </div>
+              <div class="font-mono text-sm font-black text-[#1c1510] dark:text-[#faf0e6] pw-display select-all">${'•'.repeat(Math.min(cred.password.length, 12))}</div>
+            </div>
+          </div>
+        `;
+        credentialsList.appendChild(card);
+      });
+
+      // Bind copy buttons
+      document.querySelectorAll('.copy-cred').forEach((b) => {
+        b.addEventListener('click', async () => {
+          const val = (b as HTMLElement).dataset.value || '';
+          try {
+            await navigator.clipboard.writeText(val);
+            const orig = b.textContent;
+            b.textContent = 'Tersalin! ✅';
+            setTimeout(() => { b.textContent = orig; }, 1500);
+          } catch {}
+        });
+      });
+
+      // Bind toggle buttons
+      document.querySelectorAll('.toggle-pw').forEach((b) => {
+        b.addEventListener('click', () => {
+          const card = b.closest('.p-3');
+          const display = card?.querySelector('.pw-display');
+          if (!display) return;
+          const showing = b.textContent?.trim() === 'Sembunyikan';
+          if (showing) {
+            display.textContent = (b as HTMLElement).dataset.masked || '';
+            b.textContent = 'Lihat';
+          } else {
+            display.textContent = (b as HTMLElement).dataset.value || '';
+            b.textContent = 'Sembunyikan';
+          }
+        });
+      });
+    }
+
+    resultsContainer?.classList.remove('hidden');
+  }
+
+  // Copy All Credentials
+  copyAllBtn?.addEventListener('click', async () => {
+    if (!currentCredentials || currentCredentials.length === 0) return;
+    const textToCopy = currentCredentials.map((c, i) => `Akun #${i + 1}\nEmail/ID: ${c.email}\nPassword: ${c.password}`).join('\n\n');
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      const span = copyAllBtn.querySelector('span');
+      if (span) {
+        span.textContent = 'Tersalin! ✅';
+        setTimeout(() => { span.textContent = 'Salin Semua'; }, 2000);
+      }
+    } catch {}
+  });
+
+  // Download .txt
+  downloadBtn?.addEventListener('click', () => {
+    if (!currentOrderId || !currentPin) return;
+    const params = new URLSearchParams({ order_id: currentOrderId, pin: currentPin });
+    window.location.href = `${(window as any).__API_URL__}/api/v1/orders/download?${params}`;
+  });
+</script>
