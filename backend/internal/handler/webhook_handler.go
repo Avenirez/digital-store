@@ -106,7 +106,7 @@ func (h *WebhookHandler) DuitkuCallback(w http.ResponseWriter, r *http.Request) 
 				h.telegram.AlertLowStock(product.Title, remaining)
 			}
 		}
-		h.telegram.AlertNewOrder(order.OrderNumber, order.CustomerEmail, order.TotalAmount, productTitle)
+		h.telegram.AlertNewOrder(order.OrderNumber, order.CustomerEmail, productTitle, order.Quantity, order.TotalAmount, order.Pin)
 
 	} else {
 		// ─── Payment Failed ──────────────────────────────────
@@ -229,16 +229,17 @@ func (h *WebhookHandler) NotificationListener(w http.ResponseWriter, r *http.Req
 	log.Printf("[NOTIFICATION-LISTENER] Parsed incoming payment amount: Rp %.2f", paidAmount)
 
 	// Search for PENDING order matching this total_amount (within exact match or 0.01 tolerance)
-	var orderID, orderNumber, customerEmail, productID string
+	var orderID, orderNumber, customerEmail, pin, productID string
+	var quantity int
 	var totalAmount float64
 	query := `
-		SELECT id, order_number, COALESCE(customer_email, ''), product_id::text, total_amount
+		SELECT id, order_number, COALESCE(customer_email, 'Pembeli'), COALESCE(pin, '123456'), product_id::text, quantity, total_amount
 		FROM orders
 		WHERE status = 'PENDING' AND ABS(total_amount - $1) < 0.01
 		ORDER BY created_at DESC
 		LIMIT 1
 	`
-	err = h.orderRepo.GetDB().QueryRow(ctx, query, paidAmount).Scan(&orderID, &orderNumber, &customerEmail, &productID, &totalAmount)
+	err = h.orderRepo.GetDB().QueryRow(ctx, query, paidAmount).Scan(&orderID, &orderNumber, &customerEmail, &pin, &productID, &quantity, &totalAmount)
 	if err != nil {
 		log.Printf("[NOTIFICATION-LISTENER] No pending order found for amount Rp %.2f (or query err: %v)", paidAmount, err)
 		w.Header().Set("Content-Type", "application/json")
@@ -276,7 +277,7 @@ func (h *WebhookHandler) NotificationListener(w http.ResponseWriter, r *http.Req
 	if product != nil {
 		productTitle = product.Title
 	}
-	h.telegram.AlertNewOrder(orderNumber, customerEmail, totalAmount, productTitle+" (Via App Listener)")
+	h.telegram.AlertNewOrder(orderNumber, customerEmail, productTitle, quantity, totalAmount, pin)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)

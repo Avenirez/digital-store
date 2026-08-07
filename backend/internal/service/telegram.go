@@ -102,18 +102,27 @@ func formatIDR(amount float64) string {
 	return string(result)
 }
 
-// AlertNewOrder sends an alert when a new order is paid.
-func (t *TelegramService) AlertNewOrder(orderNumber, customerInfo string, amount float64, productTitle string) {
-	if customerInfo == "" {
-		customerInfo = "Pembeli"
+// AlertNewOrder sends a detailed Telegram alert when a new order is paid.
+func (t *TelegramService) AlertNewOrder(orderNumber, customerName, productTitle string, quantity int, amount float64, pin string) {
+	if customerName == "" {
+		customerName = "Pembeli"
 	}
+	if quantity <= 0 {
+		quantity = 1
+	}
+	if pin == "" {
+		pin = "-"
+	}
+
 	msg := fmt.Sprintf(
-		"💰 <b>New Order Paid!</b>\n\n"+
-			"📦 Order: <code>%s</code>\n"+
-			"📧 Customer: %s\n"+
-			"💵 Amount: Rp %s\n"+
-			"🏷️ Product: %s",
-		orderNumber, customerInfo, formatIDR(amount), productTitle,
+		"💰 <b>Pesanan Baru Lunas!</b>\n\n"+
+			"📦 <b>No. Pesanan:</b> <code>%s</code>\n"+
+			"👤 <b>Nama Pembeli:</b> %s\n"+
+			"🏷️ <b>Produk:</b> %s\n"+
+			"🔢 <b>Jumlah Pembelian:</b> %d Pcs\n"+
+			"💵 <b>Total Nominal:</b> Rp %s\n"+
+			"🔑 <b>PIN Keamanan:</b> <code>%s</code>",
+		orderNumber, customerName, productTitle, quantity, formatIDR(amount), pin,
 	)
 	t.SendAlert(msg)
 }

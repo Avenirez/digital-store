@@ -295,7 +295,7 @@ func (h *OrderHandler) SimulatePay(w http.ResponseWriter, r *http.Request) {
 	if product != nil {
 		productTitle = product.Title
 	}
-	h.telegram.AlertNewOrder(order.OrderNumber, "Pembeli (Website)", order.TotalAmount, productTitle)
+	h.telegram.AlertNewOrder(order.OrderNumber, order.CustomerEmail, productTitle, order.Quantity, order.TotalAmount, order.Pin)
 
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"message":      "Payment simulated successfully!",
