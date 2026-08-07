@@ -69,7 +69,7 @@ import Footer from '../components/Footer.astro';
           <div class="flex flex-col items-center justify-center p-3 rounded-lg bg-white dark:bg-black/40 border border-[#e5d4c5] dark:border-[#4a3b30]">
             <!-- Dummy / QRIS SVG generator or placeholder -->
             <div class="w-44 h-44 bg-white p-2 rounded-lg border flex items-center justify-center shadow-inner">
-              <img id="qris-image" src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=00020101021126580014ID.LINKAJA.WWW01189360091100220260805204000000005802ID5911LEXAA%20STORE6015YOGYAKARTA6105552816304" alt="QRIS Lexaa Store" class="w-full h-full object-contain" />
+              <img id="qris-image" src="https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=00020101021126570011ID.DANA.WWW011893600915375231408702097523140870303UMI51440014ID.CO.QRIS.WWW0215ID10243453684420303UMI5204549953033605802ID5910Usaha%20Jaya6015Kota%20Jakarta%20Ut61051435063045DEE" alt="QRIS Lexaa Store" class="w-full h-full object-contain" />
             </div>
           </div>
         </div>
@@ -133,12 +133,15 @@ import Footer from '../components/Footer.astro';
     }
     const amtStr = Math.round(amount).toString();
     const amtLen = amtStr.length < 10 ? '0' + amtStr.length : amtStr.length.toString();
-    const amtTag = '530336054' + amtLen + amtStr;
-    const idx58 = qris.indexOf('5802ID');
-    if (idx58 !== -1) {
-      qris = qris.substring(0, idx58) + amtTag + qris.substring(idx58);
+    const amtTag = '54' + amtLen + amtStr;
+    const idx53 = qris.indexOf('5303360');
+    if (idx53 !== -1) {
+      qris = qris.substring(0, idx53 + 7) + amtTag + qris.substring(idx53 + 7);
     } else {
-      qris = qris + amtTag;
+      const idx58 = qris.indexOf('5802ID');
+      if (idx58 !== -1) {
+        qris = qris.substring(0, idx58) + '5303360' + amtTag + qris.substring(idx58);
+      }
     }
     qris = qris + '6304';
     const checksum = crc16ccitt(qris);
@@ -188,7 +191,7 @@ import Footer from '../components/Footer.astro';
           // Update QRIS image to Dynamic QRIS with exact amount
           const qrisImg = document.getElementById('qris-image') as HTMLImageElement;
           if (qrisImg && rawAmount > 0) {
-            const baseQR = '00020101021126580014ID.LINKAJA.WWW01189360091100220260805204000000005802ID5911LEXAA STORE6015YOGYAKARTA6105552816304';
+            const baseQR = '00020101021126570011ID.DANA.WWW011893600915375231408702097523140870303UMI51440014ID.CO.QRIS.WWW0215ID10243453684420303UMI5204549953033605802ID5910Usaha Jaya6015Kota Jakarta Ut61051435063045DEE';
             const dynamicQR = makeDynamicQRIS(baseQR, rawAmount);
             qrisImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(dynamicQR)}`;
           }
