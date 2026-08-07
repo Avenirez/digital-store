@@ -13,6 +13,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 )
 
 // OrderHandler handles order-related HTTP endpoints.
@@ -25,6 +26,7 @@ type OrderHandler struct {
 	crypto      *service.CryptoService
 	telegram    *service.TelegramService
 	resend      *service.ResendService
+	redisClient *redis.Client
 }
 
 // NewOrderHandler creates a new OrderHandler.
@@ -37,6 +39,7 @@ func NewOrderHandler(
 	crypto *service.CryptoService,
 	telegram *service.TelegramService,
 	resend *service.ResendService,
+	redisClient *redis.Client,
 ) *OrderHandler {
 	return &OrderHandler{
 		db:          db,
@@ -47,6 +50,7 @@ func NewOrderHandler(
 		crypto:      crypto,
 		telegram:    telegram,
 		resend:      resend,
+		redisClient: redisClient,
 	}
 }
 
@@ -111,10 +115,21 @@ func (h *OrderHandler) Checkout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 3. Calculate total with 3-digit unique code (e.g. 100-999) for auto-matching notification
+	// 3. Calculate total with sequential 3-digit unique code (starts at 100, increments 101, 102, 103...)
 	baseAmount := product.PriceIDR * float64(req.Quantity)
-	// Seed unique code based on current UnixNano
-	uniqueCode := (time.Now().UnixNano() % 900) + 100
+	var uniqueCode int64 = 100
+	if h.redisClient != nil {
+		val, err := h.redisClient.Incr(ctx, "order:unique_code_seq").Result()
+		if err == nil {
+			if val < 100 || val > 999 {
+				_ = h.redisClient.Set(ctx, "order:unique_code_seq", 100, 0).Err()
+				val = 100
+			}
+			uniqueCode = val
+		}
+	} else {
+		uniqueCode = (time.Now().UnixNano() % 900) + 100
+	}
 	totalAmount := baseAmount + float64(uniqueCode)
 
 	// 4. Generate unique order number

@@ -74,7 +74,7 @@ func main() {
 
 	// ─── Initialize Handlers ─────────────────────────────
 	productHandler := handler.NewProductHandler(productRepo)
-	orderHandler := handler.NewOrderHandler(pgPool, orderRepo, stockRepo, productRepo, duitkuSvc, cryptoSvc, telegramSvc, resendSvc)
+	orderHandler := handler.NewOrderHandler(pgPool, orderRepo, stockRepo, productRepo, duitkuSvc, cryptoSvc, telegramSvc, resendSvc, redisClient)
 	webhookHandler := handler.NewWebhookHandler(orderRepo, stockRepo, productRepo, duitkuSvc, cryptoSvc, telegramSvc, resendSvc)
 	adminHandler := handler.NewAdminHandler(stockRepo, restockRepo, productRepo, cryptoSvc, resendSvc)
 	restockHandler := handler.NewRestockHandler(restockRepo, productRepo)
