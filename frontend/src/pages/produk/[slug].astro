@@ -5,7 +5,7 @@ import Footer from '../../components/Footer.astro';
 import RestockForm from '../../components/RestockForm.astro';
 
 const { slug } = Astro.params;
-const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8080';
+const API_URL = import.meta.env.PUBLIC_API_URL || '';
 
 let product: any = null;
 let notFound = false;
@@ -31,7 +31,7 @@ const isInStock = product?.stock_count > 0;
 
 // For SSG, we need to define all possible slugs
 export async function getStaticPaths() {
-  const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8080';
+  const API_URL = import.meta.env.PUBLIC_API_URL || '';
   try {
     const res = await fetch(`${API_URL}/api/v1/products`);
     if (res.ok) {
