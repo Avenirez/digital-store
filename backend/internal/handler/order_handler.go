@@ -184,7 +184,7 @@ func (h *OrderHandler) Checkout(w http.ResponseWriter, r *http.Request) {
 	// 5. Create order in DB
 	order := &repository.Order{
 		OrderNumber:   orderNumber,
-		CustomerEmail: req.CustomerEmail,
+		CustomerEmail: req.CustomerName,
 		Pin:           generatedPin,
 		ProductID:     product.ID,
 		Quantity:      req.Quantity,
