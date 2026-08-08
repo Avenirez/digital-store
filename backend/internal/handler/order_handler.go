@@ -116,27 +116,21 @@ func (h *OrderHandler) Checkout(w http.ResponseWriter, r *http.Request) {
 	nowWIB := time.Now().In(loc)
 	dateStr := nowWIB.Format("20060102")
 
-	// Calculate total with sequential unique code
+	// Calculate total with random unique code (001 - 200)
 	baseAmount := product.PriceIDR * float64(req.Quantity)
-	var startCode int64 = 100
 
-	if h.redisClient != nil {
-		redisKey := fmt.Sprintf("order:unique_code_seq:%s", dateStr)
-		val, err := h.redisClient.Incr(ctx, redisKey).Result()
-		if err == nil {
-			if val == 1 {
-				_ = h.redisClient.Expire(ctx, redisKey, 48*time.Hour).Err()
-			}
-			startCode = 100 + ((val - 1) % 101)
-		}
+	nCode, err := rand.Int(rand.Reader, big.NewInt(200))
+	var startCode int64
+	if err != nil {
+		startCode = (time.Now().UnixNano() % 200) + 1
 	} else {
-		startCode = 100
+		startCode = nCode.Int64() + 1
 	}
 
 	// Prevent collision with any existing PENDING order with the exact same total amount
 	var uniqueCode int64 = startCode
 	var totalAmount float64
-	for attempt := 0; attempt < 101; attempt++ {
+	for attempt := 0; attempt < 200; attempt++ {
 		candidateTotal := baseAmount + float64(uniqueCode)
 		var pendingCount int
 		err := h.db.QueryRow(ctx, `SELECT COUNT(*) FROM orders WHERE total_amount = $1 AND status = 'PENDING'`, candidateTotal).Scan(&pendingCount)
@@ -146,7 +140,7 @@ func (h *OrderHandler) Checkout(w http.ResponseWriter, r *http.Request) {
 		}
 		uniqueCode++
 		if uniqueCode > 200 {
-			uniqueCode = 100
+			uniqueCode = 1
 		}
 	}
 	if totalAmount == 0 {
