@@ -6,7 +6,7 @@ import ProductCard from '../components/ProductCard.astro';
 
 // In production, this would fetch from the API at build time or SSR
 // For now, we'll use client-side fetching for dynamic stock counts
-const API_URL = import.meta.env.PUBLIC_API_URL || '';
+const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8080';
 
 let products: any[] = [];
 let fetchError = false;

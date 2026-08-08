@@ -5,7 +5,7 @@ interface Props {
 }
 
 const { title, description = 'Lexaa Store adalah platform yang menyediakan layanan pembelian akun digital premium secara instan, aman, dan terpercaya dengan sistem pengiriman otomatis.' } = Astro.props;
-const API_URL = import.meta.env.PUBLIC_API_URL || '';
+const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8080';
 ---
 
 <!DOCTYPE html>

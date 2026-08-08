@@ -4,7 +4,7 @@ import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
 
 const { slug } = Astro.params;
-const API_URL = import.meta.env.PUBLIC_API_URL || '';
+const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8080';
 
 const defaultProducts: Record<string, any> = {
   'capcut-premium-7-days': {
@@ -101,7 +101,7 @@ export async function getStaticPaths() {
     'chatgpt-plus-1-bulan',
   ];
 
-  const API_URL = import.meta.env.PUBLIC_API_URL || '';
+  const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8080';
   try {
     const res = await fetch(`${API_URL}/api/v1/products`);
     if (res.ok) {
