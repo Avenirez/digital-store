@@ -178,3 +178,19 @@ func (r *StockRepo) BulkInsert(ctx context.Context, productID string, items []Bu
 
 	return totalInserted, nil
 }
+
+// UpdatePasswordByEmail updates the encrypted password for all stock rows matching
+// the given email, regardless of their status (AVAILABLE, RESERVED, SOLD).
+// Returns the number of rows affected.
+func (r *StockRepo) UpdatePasswordByEmail(ctx context.Context, email, encryptedPassword string) (int64, error) {
+	query := `
+		UPDATE product_stocks
+		SET password_encrypted = $1
+		WHERE email = $2
+	`
+	tag, err := r.db.Exec(ctx, query, encryptedPassword, email)
+	if err != nil {
+		return 0, fmt.Errorf("stock_repo.UpdatePasswordByEmail: %w", err)
+	}
+	return tag.RowsAffected(), nil
+}

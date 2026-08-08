@@ -48,6 +48,7 @@ type BulkImportRequest struct {
 // BulkImport handles POST /api/v1/admin/stocks/bulk
 // Parses raw text input, encrypts passwords, and batch-inserts stocks.
 func (h *AdminHandler) BulkImport(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, 10<<20) // Batas 10MB
 	var req BulkImportRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, http.StatusBadRequest, "Invalid request body")
@@ -135,5 +136,109 @@ func (h *AdminHandler) BulkImport(w http.ResponseWriter, r *http.Request) {
 		"inserted":     inserted,
 		"parse_errors": parseErrors,
 		"product":      product.Title,
+	})
+}
+
+// ─── Fix Passwords (Re-encrypt existing stocks) ─────────────────
+
+// FixPasswordsRequest is the JSON body for POST /api/v1/admin/stocks/fix-passwords.
+type FixPasswordsRequest struct {
+	// RawData is the text content with one credential per line:
+	// email|password (updates ALL stocks matching each email)
+	RawData string `json:"raw_data"`
+}
+
+// FixPasswords handles POST /api/v1/admin/stocks/fix-passwords
+// Re-encrypts passwords for existing stocks (any status: SOLD, RESERVED, AVAILABLE).
+// This fixes stocks that were inserted with invalid ciphertext.
+func (h *AdminHandler) FixPasswords(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
+	var req FixPasswordsRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+
+	if req.RawData == "" {
+		writeError(w, http.StatusBadRequest, "raw_data is required (format: email|password per line)")
+		return
+	}
+
+	ctx := r.Context()
+
+	var results []map[string]interface{}
+	var totalUpdated int64
+
+	scanner := bufio.NewScanner(strings.NewReader(req.RawData))
+	lineNum := 0
+
+	for scanner.Scan() {
+		lineNum++
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+
+		parts := strings.SplitN(line, "|", 2)
+		if len(parts) < 2 {
+			results = append(results, map[string]interface{}{
+				"line":   lineNum,
+				"status": "error",
+				"error":  "expected email|password format",
+			})
+			continue
+		}
+
+		email := strings.TrimSpace(parts[0])
+		password := strings.TrimSpace(parts[1])
+
+		if email == "" || password == "" {
+			results = append(results, map[string]interface{}{
+				"line":   lineNum,
+				"email":  email,
+				"status": "error",
+				"error":  "email and password cannot be empty",
+			})
+			continue
+		}
+
+		// Encrypt password with current AES key
+		encrypted, err := h.crypto.Encrypt(password)
+		if err != nil {
+			results = append(results, map[string]interface{}{
+				"line":   lineNum,
+				"email":  email,
+				"status": "error",
+				"error":  fmt.Sprintf("encryption failed: %v", err),
+			})
+			continue
+		}
+
+		// Update ALL stocks matching this email (any status)
+		tag, err := h.stockRepo.UpdatePasswordByEmail(ctx, email, encrypted)
+		if err != nil {
+			results = append(results, map[string]interface{}{
+				"line":   lineNum,
+				"email":  email,
+				"status": "error",
+				"error":  fmt.Sprintf("database update failed: %v", err),
+			})
+			continue
+		}
+
+		results = append(results, map[string]interface{}{
+			"line":         lineNum,
+			"email":        email,
+			"status":       "ok",
+			"rows_updated": tag,
+		})
+		totalUpdated += tag
+	}
+
+	log.Printf("[ADMIN] FixPasswords: %d total rows updated across %d accounts", totalUpdated, len(results))
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"total_updated": totalUpdated,
+		"details":       results,
 	})
 }

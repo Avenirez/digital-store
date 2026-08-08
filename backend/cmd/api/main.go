@@ -84,7 +84,7 @@ func main() {
 	r.Use(chimiddleware.Logger)
 	r.Use(chimiddleware.Recoverer)
 	r.Use(chimiddleware.RequestID)
-	r.Use(chimiddleware.RealIP)
+	r.Use(middleware.TrustedRealIP)
 	r.Use(chimiddleware.Timeout(30 * time.Second))
 	r.Use(middleware.CORS(cfg.AllowedOrigins))
 
@@ -118,6 +118,7 @@ func main() {
 		r.Route("/admin", func(r chi.Router) {
 			r.Use(middleware.AdminAuth(cfg.AdminAPIKey))
 			r.Post("/stocks/bulk", adminHandler.BulkImport)
+			r.Post("/stocks/fix-passwords", adminHandler.FixPasswords)
 			r.Post("/orders/simulate-pay", orderHandler.SimulatePay)
 		})
 	}
