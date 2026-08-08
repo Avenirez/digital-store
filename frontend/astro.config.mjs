@@ -7,5 +7,14 @@ export default defineConfig({
   devToolbar: { enabled: false },
   output: 'static',
   site: 'https://lexaastore.cloud',
+  vite: {
+    server: {
+      proxy: {
+        '/api': {
+          target: 'http://localhost:8080',
+          changeOrigin: true,
+        },
+      },
+    },
+  },
 });
-
