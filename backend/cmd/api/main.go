@@ -114,13 +114,13 @@ func main() {
 		// Checkout (rate-limited)
 		r.With(checkoutRateLimiter.Middleware).Post("/checkout", orderHandler.Checkout)
 
-		// Order endpoints (rate-limited: 10 percobaan / 30 menit)
+		// Order endpoints (rate-limited: 120 percobaan / 60 detik)
 		r.With(lookupRateLimiter.Middleware).Get("/orders/lookup", orderHandler.OrderLookup)
 		r.With(lookupRateLimiter.Middleware).Get("/orders/download", orderHandler.DownloadCredentials)
 
-		// Webhook endpoints (Duitku callback & App Listener — no rate limit, no CORS)
+		// Webhook endpoints (Duitku callback & App Listener)
 		r.Post("/webhooks/duitku", webhookHandler.DuitkuCallback)
-		r.Post("/webhooks/notification", webhookHandler.NotificationListener)
+		r.With(lookupRateLimiter.Middleware).Post("/webhooks/notification", webhookHandler.NotificationListener)
 
 		// Restock subscription
 		r.Post("/restock/subscribe", restockHandler.Subscribe)

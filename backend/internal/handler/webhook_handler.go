@@ -179,18 +179,17 @@ type NotificationPayload struct {
 // NotificationListener handles POST /api/v1/webhooks/notification
 // It receives push notifications from MacroDroid on Android and matches payment amounts.
 func (h *WebhookHandler) NotificationListener(w http.ResponseWriter, r *http.Request) {
-	// Secure endpoint: verify notification secret if NOTIFICATION_SECRET is set
+	// Secure endpoint: verify notification secret strictly
 	expectedSecret := os.Getenv("NOTIFICATION_SECRET")
-	if expectedSecret != "" {
-		providedSecret := r.Header.Get("X-Notification-Secret")
-		if providedSecret == "" {
-			providedSecret = r.Header.Get("X-MacroDroid-Secret")
-		}
-		if subtle.ConstantTimeCompare([]byte(providedSecret), []byte(expectedSecret)) != 1 {
-			log.Printf("[NOTIFICATION-LISTENER] Unauthorized request attempt from IP: %s", r.RemoteAddr)
-			writeError(w, http.StatusUnauthorized, "Unauthorized notification request")
-			return
-		}
+	providedSecret := r.Header.Get("X-Notification-Secret")
+	if providedSecret == "" {
+		providedSecret = r.Header.Get("X-MacroDroid-Secret")
+	}
+
+	if expectedSecret == "" || subtle.ConstantTimeCompare([]byte(providedSecret), []byte(expectedSecret)) != 1 {
+		log.Printf("[NOTIFICATION-LISTENER] Unauthorized request attempt from IP: %s", r.RemoteAddr)
+		writeError(w, http.StatusUnauthorized, "Unauthorized notification request")
+		return
 	}
 
 	ctx := r.Context()

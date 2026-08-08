@@ -1,9 +1,12 @@
 package handler
 
 import (
+	"crypto/rand"
+	"crypto/subtle"
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/big"
 	"net/http"
 	"strings"
 	"time"
@@ -58,10 +61,10 @@ func NewOrderHandler(
 
 // CheckoutRequest is the JSON body for POST /api/v1/checkout.
 type CheckoutRequest struct {
-	ProductSlug  string `json:"product_slug"`
-	Pin          string `json:"pin"`
-	CustomerName string `json:"customer_name"`
-	Quantity     int    `json:"quantity"`
+	ProductSlug   string `json:"product_slug"`
+	CustomerName  string `json:"customer_name"`
+	CustomerEmail string `json:"customer_email"`
+	Quantity      int    `json:"quantity"`
 }
 
 // Checkout handles POST /api/v1/checkout
@@ -74,8 +77,8 @@ func (h *OrderHandler) Checkout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Validate input
-	if req.ProductSlug == "" || req.Pin == "" {
-		writeError(w, http.StatusBadRequest, "product_slug and pin are required")
+	if req.ProductSlug == "" {
+		writeError(w, http.StatusBadRequest, "product_slug is required")
 		return
 	}
 	if strings.TrimSpace(req.CustomerName) == "" {
@@ -83,10 +86,13 @@ func (h *OrderHandler) Checkout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	req.CustomerName = strings.TrimSpace(req.CustomerName)
-	if len(req.Pin) < 4 || len(req.Pin) > 10 {
-		writeError(w, http.StatusBadRequest, "PIN must be between 4 and 10 digits")
+
+	if strings.TrimSpace(req.CustomerEmail) == "" {
+		writeError(w, http.StatusBadRequest, "Email pembeli wajib diisi")
 		return
 	}
+	req.CustomerEmail = strings.TrimSpace(req.CustomerEmail)
+
 	if req.Quantity <= 0 {
 		req.Quantity = 1
 	}
@@ -183,11 +189,21 @@ func (h *OrderHandler) Checkout(w http.ResponseWriter, r *http.Request) {
 
 	orderNumber := fmt.Sprintf("%03d", seqNum)
 
+	// Generate secure random 6-digit PIN (100000 - 999999)
+	n, err := rand.Int(rand.Reader, big.NewInt(900000))
+	var generatedPin string
+	if err != nil {
+		log.Printf("[CHECKOUT] Failed to generate secure PIN: %v", err)
+		generatedPin = fmt.Sprintf("%06d", time.Now().UnixNano()%1000000)
+	} else {
+		generatedPin = fmt.Sprintf("%06d", n.Int64()+100000)
+	}
+
 	// 5. Create order in DB
 	order := &repository.Order{
 		OrderNumber:   orderNumber,
-		CustomerEmail: req.CustomerName,
-		Pin:           req.Pin,
+		CustomerEmail: req.CustomerEmail,
+		Pin:           generatedPin,
 		ProductID:     product.ID,
 		Quantity:      req.Quantity,
 		TotalAmount:   totalAmount,
@@ -229,15 +245,16 @@ func (h *OrderHandler) Checkout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 7. Direct Payment URL to frontend checkout page
-	paymentURL := fmt.Sprintf("/checkout?order_id=%s&pin=%s", orderNumber, req.Pin)
+	paymentURL := fmt.Sprintf("/checkout?order_id=%s&pin=%s", orderNumber, generatedPin)
 	reference := fmt.Sprintf("NOTIF-%s", orderNumber)
 
 	_ = h.orderRepo.SetPaymentInfo(ctx, order.ID, paymentURL, reference)
 
-	// 8. Return response with unique code details
+	// 8. Return response with unique code details and generated PIN
 	writeJSON(w, http.StatusCreated, map[string]interface{}{
 		"order_id":     order.ID,
 		"order_number": orderNumber,
+		"pin":          generatedPin,
 		"payment_url":  paymentURL,
 		"reference":    reference,
 		"base_amount":  baseAmount,
@@ -330,8 +347,11 @@ func (h *OrderHandler) OrderLookup(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Verify PIN matching using constant-time comparison
+	pinValid := pin != "" && subtle.ConstantTimeCompare([]byte(order.Pin), []byte(pin)) == 1
+
 	// If PIN is provided and incorrect, return unauthorized
-	if pin != "" && order.Pin != pin {
+	if pin != "" && !pinValid {
 		writeError(w, http.StatusUnauthorized, "PIN yang kamu masukkan salah")
 		return
 	}
@@ -341,7 +361,7 @@ func (h *OrderHandler) OrderLookup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// If order is PAID and valid PIN is provided, include decrypted credentials
-	if order.Status == repository.OrderStatusPaid && pin != "" && order.Pin == pin {
+	if order.Status == repository.OrderStatusPaid && pinValid {
 		stocks, err := h.stockRepo.GetByOrderID(ctx, order.ID)
 		if err != nil {
 			log.Printf("[LOOKUP] GetByOrderID error: %v", err)
@@ -381,12 +401,12 @@ func (h *OrderHandler) DownloadCredentials(w http.ResponseWriter, r *http.Reques
 
 	ctx := r.Context()
 
-	// Verify order ownership via PIN
+	// Verify order ownership via PIN using constant-time compare
 	order, err := h.orderRepo.GetByOrderNumberAndPin(ctx, orderID, pin)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			order, err = h.orderRepo.GetByID(ctx, orderID)
-			if err != nil || order.Pin != pin {
+			if err != nil || subtle.ConstantTimeCompare([]byte(order.Pin), []byte(pin)) != 1 {
 				writeError(w, http.StatusNotFound, "Order not found")
 				return
 			}

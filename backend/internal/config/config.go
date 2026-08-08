@@ -22,8 +22,9 @@ type Config struct {
 	RedisURL string
 
 	// Security
-	AESKey      []byte // 32-byte key for AES-256-GCM
-	AdminAPIKey string
+	AESKey             []byte // 32-byte key for AES-256-GCM
+	AdminAPIKey        string
+	NotificationSecret string
 
 	// Duitku
 	DuitkuMerchantCode string
@@ -70,8 +71,9 @@ func Load() (*Config, error) {
 		DatabaseURL: requireEnv("DATABASE_URL"),
 		RedisURL:    getEnv("REDIS_URL", "redis://localhost:6379/0"),
 
-		AESKey:      aesKey,
-		AdminAPIKey: getEnv("ADMIN_API_KEY", ""),
+		AESKey:             aesKey,
+		AdminAPIKey:        getEnv("ADMIN_API_KEY", ""),
+		NotificationSecret: getEnv("NOTIFICATION_SECRET", ""),
 
 		DuitkuMerchantCode: getEnv("DUITKU_MERCHANT_CODE", ""),
 		DuitkuAPIKey:       getEnv("DUITKU_API_KEY", ""),
@@ -89,6 +91,10 @@ func Load() (*Config, error) {
 
 	if cfg.DatabaseURL == "" {
 		return nil, fmt.Errorf("config: DATABASE_URL is required")
+	}
+
+	if cfg.NotificationSecret == "" {
+		return nil, fmt.Errorf("config: NOTIFICATION_SECRET is required for security")
 	}
 
 	return cfg, nil
