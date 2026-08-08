@@ -2,7 +2,6 @@ package handler
 
 import (
 	"bufio"
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -19,7 +18,6 @@ type AdminHandler struct {
 	restockRepo *repository.RestockRepo
 	productRepo *repository.ProductRepo
 	crypto      *service.CryptoService
-	resend      *service.ResendService
 }
 
 // NewAdminHandler creates a new AdminHandler.
@@ -28,14 +26,12 @@ func NewAdminHandler(
 	restockRepo *repository.RestockRepo,
 	productRepo *repository.ProductRepo,
 	crypto *service.CryptoService,
-	resend *service.ResendService,
 ) *AdminHandler {
 	return &AdminHandler{
 		stockRepo:   stockRepo,
 		restockRepo: restockRepo,
 		productRepo: productRepo,
 		crypto:      crypto,
-		resend:      resend,
 	}
 }
 
@@ -135,52 +131,9 @@ func (h *AdminHandler) BulkImport(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("[ADMIN] Bulk import: %d items inserted for product %s (%s)", inserted, req.ProductID, product.Title)
 
-	// Trigger restock notification worker asynchronously
-	go h.triggerRestockAlerts(req.ProductID, product.Title, product.Slug)
-
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"inserted":     inserted,
 		"parse_errors": parseErrors,
 		"product":      product.Title,
 	})
-}
-
-// triggerRestockAlerts sends email notifications to all pending subscribers.
-func (h *AdminHandler) triggerRestockAlerts(productID, productTitle, productSlug string) {
-	if !h.resend.IsConfigured() {
-		return
-	}
-
-	ctx := context.Background()
-
-	subs, err := h.restockRepo.GetPendingByProduct(ctx, productID)
-	if err != nil {
-		log.Printf("[RESTOCK] Failed to fetch subscribers: %v", err)
-		return
-	}
-
-	if len(subs) == 0 {
-		return
-	}
-
-	log.Printf("[RESTOCK] Sending alerts to %d subscribers for %s", len(subs), productTitle)
-
-	// TODO: Build proper product URL from frontend config
-	productURL := fmt.Sprintf("/produk/%s", productSlug)
-
-	var notifiedIDs []string
-	for _, sub := range subs {
-		if err := h.resend.SendRestockAlert(sub.Email, productTitle, productURL); err != nil {
-			log.Printf("[RESTOCK] Failed to email %s: %v", sub.Email, err)
-			continue
-		}
-		notifiedIDs = append(notifiedIDs, sub.ID)
-	}
-
-	if len(notifiedIDs) > 0 {
-		if err := h.restockRepo.MarkNotified(ctx, notifiedIDs); err != nil {
-			log.Printf("[RESTOCK] Failed to mark notified: %v", err)
-		}
-		log.Printf("[RESTOCK] %d subscribers notified for %s", len(notifiedIDs), productTitle)
-	}
 }

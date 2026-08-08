@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"os"
-	"strconv"
 
 	"github.com/joho/godotenv"
 )
@@ -25,18 +24,6 @@ type Config struct {
 	AESKey             []byte // 32-byte key for AES-256-GCM
 	AdminAPIKey        string
 	NotificationSecret string
-
-	// Duitku
-	DuitkuMerchantCode string
-	DuitkuAPIKey       string
-	DuitkuIsProduction bool
-	DuitkuCallbackURL  string
-	DuitkuReturnURL    string
-
-	// Resend (Email)
-	ResendAPIKey   string
-	ResendFromEmail string
-	ResendFromName  string
 
 	// Telegram
 	TelegramBotToken string
@@ -62,8 +49,6 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("config: AES_KEY must be exactly 32 bytes (64 hex chars), got %d bytes", len(aesKey))
 	}
 
-	duitkuProd, _ := strconv.ParseBool(getEnv("DUITKU_IS_PRODUCTION", "false"))
-
 	cfg := &Config{
 		ServerPort:     getEnv("SERVER_PORT", "8080"),
 		AllowedOrigins: getEnv("ALLOWED_ORIGINS", "http://localhost:4321"),
@@ -74,16 +59,6 @@ func Load() (*Config, error) {
 		AESKey:             aesKey,
 		AdminAPIKey:        getEnv("ADMIN_API_KEY", ""),
 		NotificationSecret: getEnv("NOTIFICATION_SECRET", ""),
-
-		DuitkuMerchantCode: getEnv("DUITKU_MERCHANT_CODE", ""),
-		DuitkuAPIKey:       getEnv("DUITKU_API_KEY", ""),
-		DuitkuIsProduction: duitkuProd,
-		DuitkuCallbackURL:  getEnv("DUITKU_CALLBACK_URL", ""),
-		DuitkuReturnURL:    getEnv("DUITKU_RETURN_URL", ""),
-
-		ResendAPIKey:   getEnv("RESEND_API_KEY", ""),
-		ResendFromEmail: getEnv("RESEND_FROM_EMAIL", "noreply@example.com"),
-		ResendFromName:  getEnv("RESEND_FROM_NAME", "Digital Store"),
 
 		TelegramBotToken: getEnv("TELEGRAM_BOT_TOKEN", ""),
 		TelegramChatID:   getEnv("TELEGRAM_CHAT_ID", ""),
@@ -109,7 +84,6 @@ func getEnv(key, defaultVal string) string {
 }
 
 // requireEnv returns the value of an environment variable, or empty string if unset.
-// Validation is handled by the caller.
 func requireEnv(key string) string {
 	return os.Getenv(key)
 }

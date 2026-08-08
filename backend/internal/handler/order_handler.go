@@ -25,10 +25,8 @@ type OrderHandler struct {
 	orderRepo   *repository.OrderRepo
 	stockRepo   *repository.StockRepo
 	productRepo *repository.ProductRepo
-	duitku      *service.DuitkuService
 	crypto      *service.CryptoService
 	telegram    *service.TelegramService
-	resend      *service.ResendService
 	redisClient *redis.Client
 }
 
@@ -38,10 +36,8 @@ func NewOrderHandler(
 	orderRepo *repository.OrderRepo,
 	stockRepo *repository.StockRepo,
 	productRepo *repository.ProductRepo,
-	duitku *service.DuitkuService,
 	crypto *service.CryptoService,
 	telegram *service.TelegramService,
-	resend *service.ResendService,
 	redisClient *redis.Client,
 ) *OrderHandler {
 	return &OrderHandler{
@@ -49,10 +45,8 @@ func NewOrderHandler(
 		orderRepo:   orderRepo,
 		stockRepo:   stockRepo,
 		productRepo: productRepo,
-		duitku:      duitku,
 		crypto:      crypto,
 		telegram:    telegram,
-		resend:      resend,
 		redisClient: redisClient,
 	}
 }
@@ -68,7 +62,7 @@ type CheckoutRequest struct {
 }
 
 // Checkout handles POST /api/v1/checkout
-// Creates an order, reserves stock, and initiates a Duitku payment.
+// Creates an order, reserves stock, and provides immediate order lookup info.
 func (h *OrderHandler) Checkout(w http.ResponseWriter, r *http.Request) {
 	var req CheckoutRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -86,12 +80,6 @@ func (h *OrderHandler) Checkout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	req.CustomerName = strings.TrimSpace(req.CustomerName)
-
-	if strings.TrimSpace(req.CustomerEmail) == "" {
-		writeError(w, http.StatusBadRequest, "Email pembeli wajib diisi")
-		return
-	}
-	req.CustomerEmail = strings.TrimSpace(req.CustomerEmail)
 
 	if req.Quantity <= 0 {
 		req.Quantity = 1
@@ -128,7 +116,7 @@ func (h *OrderHandler) Checkout(w http.ResponseWriter, r *http.Request) {
 	nowWIB := time.Now().In(loc)
 	dateStr := nowWIB.Format("20060102")
 
-	// Calculate total with sequential unique code (starts at 100, resets at 200 & resets daily at 00:00 WIB)
+	// Calculate total with sequential unique code
 	baseAmount := product.PriceIDR * float64(req.Quantity)
 	var startCode int64 = 100
 

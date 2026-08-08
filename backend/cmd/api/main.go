@@ -58,17 +58,7 @@ func main() {
 	// ─── Auto-seed CapCut product and default accounts ───────
 	database.EnsureDefaultCapcutStock(ctx, pgPool, cryptoSvc)
 
-
-	duitkuSvc := service.NewDuitkuService(
-		cfg.DuitkuMerchantCode,
-		cfg.DuitkuAPIKey,
-		cfg.DuitkuIsProduction,
-		cfg.DuitkuCallbackURL,
-		cfg.DuitkuReturnURL,
-	)
-
 	telegramSvc := service.NewTelegramService(cfg.TelegramBotToken, cfg.TelegramChatID)
-	resendSvc := service.NewResendService(cfg.ResendAPIKey, cfg.ResendFromEmail, cfg.ResendFromName)
 
 	// ─── Initialize Repositories ─────────────────────────
 	productRepo := repository.NewProductRepo(pgPool)
@@ -78,9 +68,9 @@ func main() {
 
 	// ─── Initialize Handlers ─────────────────────────────
 	productHandler := handler.NewProductHandler(productRepo)
-	orderHandler := handler.NewOrderHandler(pgPool, orderRepo, stockRepo, productRepo, duitkuSvc, cryptoSvc, telegramSvc, resendSvc, redisClient)
-	webhookHandler := handler.NewWebhookHandler(orderRepo, stockRepo, productRepo, duitkuSvc, cryptoSvc, telegramSvc, resendSvc)
-	adminHandler := handler.NewAdminHandler(stockRepo, restockRepo, productRepo, cryptoSvc, resendSvc)
+	orderHandler := handler.NewOrderHandler(pgPool, orderRepo, stockRepo, productRepo, cryptoSvc, telegramSvc, redisClient)
+	webhookHandler := handler.NewWebhookHandler(orderRepo, stockRepo, productRepo, cryptoSvc, telegramSvc)
+	adminHandler := handler.NewAdminHandler(stockRepo, restockRepo, productRepo, cryptoSvc)
 	restockHandler := handler.NewRestockHandler(restockRepo, productRepo)
 
 	// ─── Initialize Middleware ───────────────────────────
@@ -118,8 +108,7 @@ func main() {
 		r.With(lookupRateLimiter.Middleware).Get("/orders/lookup", orderHandler.OrderLookup)
 		r.With(lookupRateLimiter.Middleware).Get("/orders/download", orderHandler.DownloadCredentials)
 
-		// Webhook endpoints (Duitku callback & App Listener)
-		r.Post("/webhooks/duitku", webhookHandler.DuitkuCallback)
+		// Webhook endpoint (App Listener)
 		r.With(lookupRateLimiter.Middleware).Post("/webhooks/notification", webhookHandler.NotificationListener)
 
 		// Restock subscription
